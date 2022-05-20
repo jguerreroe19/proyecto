@@ -67,6 +67,48 @@
         }
     }
 
+    //Función para validar la estructura de la contraseña
+    function invalidPwd($clave){
+            $contar = 0;
+            $error_clave ="";
+           if(strlen($clave) < 8){
+              $error_clave = $error_clave."La contraseña debe tener al menos 8 caracteres <br>";
+           }
+    
+           if(strlen($clave) > 16){
+              $error_clave = $error_clave."La contraseña no puede tener más de 16 caracteres<br>";
+           }
+    
+           if (!preg_match('`[a-zA-Z]`',$clave)){
+              $error_clave = $error_clave."La contraseña debe tener al menos una letra<br>";
+              $contar++;
+           }
+           
+           if (!preg_match('`[0-9]`',$clave)){
+              $error_clave = $error_clave."La contraseña debe tener al menos un caracter numérico<br>";
+              $contar++;
+           }
+           if ((strpos($clave, '$') !== false) || (strpos($clave, '#') !== false) || (strpos($clave, '-') !== false) || (strpos($clave, '_') !== false) || (strpos($clave, '&') !== false) || (strpos($clave, '%') !== false)) {
+                echo 'true';
+            } else {
+                $error_clave = $error_clave."La contraseña debe tener al menos un caracter especial (#,$,-,_,&,%) <br>";
+                $contar++;
+            }
+           
+            $expresion = '/^[a-zA-Z0-9-_#$&%]{8,16}$$/i'; // Valida la longitud de 8 a 16 caracteres, los caracteres admitidos
+            $resultado = preg_match($expresion, $clave);
+            if(!$resultado) {
+              $contar++;
+            } 
+    
+            if($contar > 0){
+                return $error_clave;
+            } else {
+                $error_clave = false;
+                return $error_clave;
+            }
+    }
+
     //Función para crear el nuevo usuario
     function createUser($dbh, $name, $sname, $email, $pwd){
         try{
@@ -82,7 +124,7 @@
         
         //Ejecutando la sentencia
         $sentencia->execute();
-        header("location: ../signup.php?error=none");
+        header("location: ../signup.php?error=none&name=&sname=&email=");
         } catch (PDOException $e){
             //$sentencia->rollback();
             //throw $e;
@@ -118,42 +160,40 @@
 
             //Si la contraseña ingresada conincide con la almacenada en la BD
             if($checkPwd === true){
-				//Generando el registro de sesión en la BD
-				//Obteniendo la IP del HOST
-				$ip = getIPAddress();
-				$creasesion = CreateSessionID($dbh,$usuarios["IDUSUARIO"], $ip);
-				
-				if ($creasesion === true){
-					//Obteniendo el número de sesión para inicializarlo en PHP
-					$sid = GetSessionID($dbh,$usuarios["IDUSUARIO"]);
-					if ($sid > 0) {
-						session_id($sid);
-						session_start();
-						$_SESSION["userid"] = $usuarios["EMAIL"];
-						$_SESSION["usernombre"] = $usuarios["NOMBRE"];
-						$_SESSION["typeRol"] = $usuarios["nombrerol"];
-						$_SESSION["idrol"] = $usuarios["IDROL"];
-						$_SESSION["idusuario"] = $usuarios["IDUSUARIO"];
-						$_SESSION["sid"] = $sid;
-						header("location: ../index.php");
-						exit();
-					} else {
-						ErrorLog($dbh, $idsesion, 'No se pudieron obtener los detalles de la sesión', 'OSE_001');
-						header("location: ../?error=OSE_001");
-						exit();
-					}
-				} else {
-					ErrorLog($dbh, $idsesion, 'No fue posible generar la sesión', 'OSE_002');
-					header("location: ../?error=OSE_002");
-					exit();
-				}
+                //Generando el registro de sesión en la BD
+                if (CreateSessionID($dbh,$usuarios["IDUSUARIO"], getIPAddress())){
+
+                    //Obteniendo el número de sesión para inicializarlo en PHP
+                    $sid = GetSessionID($dbh,$usuarios["IDUSUARIO"]);
+                    if ($sid > 0) {
+                        session_id($sid);
+                        session_start();
+                        $_SESSION["userid"] = $usuarios["EMAIL"];
+                        $_SESSION["usernombre"] = $usuarios["NOMBRE"];
+                        $_SESSION["typeRol"] = $usuarios["nombrerol"];
+                        $_SESSION["idrol"] = $usuarios["IDROL"];
+                        $_SESSION["idusuario"] = $usuarios["IDUSUARIO"];
+                        $_SESSION["sid"] = $sid;
+                        header("location: ../index.php");
+                        exit();
+                    } else {
+                        ErrorLog($dbh, $idsesion, 'No se pudieron obtener los detalles de la sesión', 'OSE_001');
+                        header("location: ../?error=OSE_001");
+                        exit();
+                    }
+                } else {
+                    ErrorLog($dbh, $idsesion, 'No fue posible generar la sesión', 'OSE_002');
+                    header("location: ../?error=OSE_002");
+                    exit();
+                }
             } else if($checkPwd === false) {
-				header("location: ../index.php?error=wronglogin");
-				exit();
+                header("location: ../index.php?error=wronglogin");
+                exit();
             }
         }catch (PDOException $e){
             ErrorLog($dbh, $idsesion, 'Error en el proceso de login '.$e, 'OSE_005');
         }
+
     }
 
     //Función para actualizar la información personal
@@ -338,7 +378,7 @@
 						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
 		} elseif ($opcion == 'Habilidad'){
 			$query = ("SELECT T.idtecnologia id, T.nombre
-						FROM tecnologias T
+						FROM TECNOLOGIAS T
 						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
 		}
 		try{
@@ -459,7 +499,7 @@
                             WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
         } elseif ($opcion == 'Habilidad'){
                 $query = ("SELECT T.idtecnologia id, T.nombre
-                            FROM tecnologias T
+                            FROM TECNOLOGIAS T
                             WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
         }
         try{
@@ -674,3 +714,212 @@
                 header("location: ../querySkills.php?error=errorDelete");
             } 
     }
+
+    //Función para generar la tabla con el listado de usuarios sin rol asignado
+	function queryUserRole($dbh){
+        $i = 0;
+		try{
+			//Preparando la sentencia
+			$sentencia = $dbh->prepare("SELECT idusuario, NVL(nombre, '') nombre, NVL(apellidos, '') apellidos, NVL(email, '') email, NVL(fecharegistro, '') fecharegistro, NVL(idrol, '') idrol
+                                        FROM usuarios
+                                        WHERE idrol = 4");
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            //Obteniendo los datos
+			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+                $i++;
+                echo '<form name="form'.$i.'" action="includes/addRole.inc.php" method="post">';
+			?>
+				
+                <tr>
+				<td><input type="text" name="fname" placeholder="Nombre" value="<?php echo $vtabla['nombre']?>" readonly></td>
+				<td><input type="text" name="sname" placeholder="Apellido" value="<?php echo $vtabla['apellidos']?>" readonly></td>
+				<td><input type="text" name="email" placeholder="Email" value="<?php echo $vtabla['email']?>" readonly></td>
+                <td><input type="text" name="fecha" placeholder="Fecha de registro" value="<?php echo $vtabla['fecharegistro']?>" readonly></td>
+                <td>
+                    <select name="idrol" id= "idrol">
+                        <?php 
+                            roleList($dbh, $vtabla['idrol']);
+                            //echo $vtabla['idrol'];
+                        ?>
+                    </select>
+                </td>
+                <td><button type="submit" name="submit">Guardar</button></td>
+                <td><input type="hidden" name="idusuario" placeholder="idusuario" value="<?php echo $vtabla['idusuario']?>"></td>
+				</tr>
+                </form>
+			<?php
+			}
+        }catch (PDOException $e){
+            echo('Error al cargar los datos en el combobox 3'.$e);
+        }	
+	}
+
+    //Función para generar el listado de roles
+    function roleList($dbh, $opcion){
+        try{
+            //Preparando la sentencia
+            $sentencia = $dbh->prepare("SELECT idrol, nombre FROM ROLES");
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            //Obteniendo los datos
+            while ($lista = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+                if ($opcion == $lista['idrol']){
+                    ?>
+                        <option value="<?php echo $lista['idrol']?>" selected><?php echo $lista['nombre']?></option>
+                    <?php        
+                }else{
+                    ?>
+                        <option value="<?php echo $lista['idrol']?>"><?php echo $lista['nombre']?></option>
+                    <?php
+                }
+            }
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al generar el listado de roles'.$e, 'OSE_006');
+        }
+    }
+
+    //Función para actualizar el rol del usuario
+    function updateRole($dbh, $idusr, $idrol, $idsesion){
+        try{
+			//Definiendo el query
+            $query = 'UPDATE usuarios SET idrol = :idrol WHERE idusuario = :idusr';
+
+			//Preparando la sentencia SQL
+			$sentencia = $dbh->prepare($query);
+			//Parámetros
+			$sentencia->bindParam(':idrol', $idrol);
+            $sentencia->bindParam(':idusr', $idusr);
+					
+			//Ejecutando la sentencia
+			$sentencia->execute();
+            
+            //Registrando el movimiento en la bitácora
+            movimientos($dbh, $idsesion, 'UPDATE USUARIOS - IDROL');
+			
+            //Redireccionando a la pantalla anterior
+			header("location: ../addRole.php?error=none");
+            
+            
+		} catch (PDOException $e){
+			ErrorLog($dbh, $idsesion, 'Error al actualizar rol del usuario '.$e, 'ISE_005');
+			header("location: ../addRole.php?error=errorUpdate");
+		} 
+    } 
+
+    //Función para generar la tabla con el listado de usuarios y los datos generales
+	function queryUsers($dbh, $dato, $idsesion){
+        $dato = '%'.$dato.'%';
+		try{
+			//Preparando la sentencia
+			$sentencia = $dbh->prepare("SELECT NVL(U.idusuario, '') idusuario
+                                             , NVL(U.nombre, '') nombre
+                                             , NVL(U.apellidos, '') apellidos
+                                             , NVL(U.fechanacimiento, '') fechanacimiento
+                                             , NVL(U.telefono, '') telefono
+                                             , NVL(U.telcontacto, '') telcontacto
+                                             , NVL(U.email, '') email
+                                             , NVL(U.idrol, '') idrol
+                                             , NVL(R.nombre, '') rol
+                                             , NVL(U.semestre, '') semestre
+                                             , NVL(U.numeroempleado, '') numeroempleado
+                                             , NVL(U.numeromatricula, '') numeromatricula
+                                             , NVL(U.fecharegistro, '') fecharegistro
+                                             , NVL(U.fechafin, '') fechafin
+                                             , NVL(U.bloqueado, 'No') bloqueado
+                                        FROM usuarios U
+                                        INNER JOIN roles R ON U.idrol = R.idrol
+                                        WHERE (UPPER(U.nombre) LIKE UPPER(:dato) OR UPPER(U.apellidos) LIKE UPPER(:dato) OR UPPER(U.email) LIKE UPPER(:dato))");
+            
+            //Parámetros
+			$sentencia->bindParam(':dato', $dato);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            
+            //Obteniendo los datos
+			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+			?>
+                <tr>
+                    <td><?php echo $vtabla['nombre'];?></td>
+                    <td><?php echo $vtabla['apellidos'];?></td>
+                    <td><?php echo $vtabla['fechanacimiento'];?></td>
+                    <td><?php echo $vtabla['telefono'];?></td>
+                    <td><?php echo $vtabla['telcontacto'];?></td>
+                    <td><?php echo $vtabla['email'];?></td>
+                    <td><?php echo $vtabla['rol'];?></td>
+                    <td><?php echo $vtabla['semestre'];?></td>
+                    <td><?php echo $vtabla['numeroempleado'];?></td>
+                    <td><?php echo $vtabla['numeromatricula'];?></td>
+                    <td><?php echo $vtabla['fecharegistro'];?></td>
+                    <td><?php echo $vtabla['fechafin'];?></td>
+                    <td><?php echo $vtabla['bloqueado'];?></td>
+                </tr>
+			<?php
+			}
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar el listado de usuarios '.$e, 'ISE_006');
+			header("location: ../queryUsers.php?error=statementerror");
+        }	
+	}
+    
+
+    
+    //Función para generar la tabla con los datos de la bitácora de acceso
+	function queryLog($dbh, $dato, $idsesion, $check, $fechaini, $fechafin){
+        //Concatenando el valor de búsqueda para la BD
+        $dato = '%'.$dato.'%';
+        
+        $query = "SELECT NVL(B.idsesion, '') idsesion
+                            , NVL(B.idusuario, '') idusuario
+                            , NVL(U.email, '') usuario
+                            , NVL(B.host, '') host
+                            , NVL(B.fechainicio, '') fechainicio
+                            , NVL(B.fechafin, '') fechafin
+                            , NVL(TIMESTAMPDIFF(second, B.fechainicio, B.fechafin), '') duracion
+                    FROM bitacora B
+                    INNER JOIN usuarios U ON B.idusuario = U.idusuario
+                    WHERE (UPPER(U.email) LIKE UPPER(:dato) OR UPPER(B.host) LIKE UPPER(:dato))";
+        //Ajustando los datos de fechas
+        if ($check == 'no'){
+            $fechaini = NULL;
+            $fechafin = NULL;
+        } else{
+            $fechaini = "'".$fechaini."'";
+            $fechafin = "'".$fechafin."'";
+
+            $query = $query." AND DATE(B.fechainicio) >= NVL(".$fechaini.", B.fechainicio) 
+                              AND DATE(B.fechafin) <= NVL(".$fechafin.", B.fechafin)";
+        }
+
+        $query = $query." ORDER BY B.idsesion";
+
+        try{
+			//Preparando la sentencia
+			$sentencia = $dbh->prepare($query);
+            
+            //Parámetros
+			$sentencia->bindParam(':dato', $dato);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            
+            //Obteniendo los datos
+			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+			?>
+                <tr>
+                    <td><?php echo $vtabla['idsesion'];?></td>
+                    <td><?php echo $vtabla['idusuario'];?></td>
+                    <td><?php echo $vtabla['usuario'];?></td>
+                    <td><?php echo $vtabla['host'];?></td>
+                    <td><?php echo $vtabla['fechainicio'];?></td>
+                    <td><?php echo $vtabla['fechafin'];?></td>
+                    <td><?php echo $vtabla['duracion'];?></td>
+                </tr>
+			<?php
+			}
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar los datos de la bitácora '.$e, 'ISE_007');
+			//header("location: ../queryLog.php?error=statementerror");
+        }	
+	}
