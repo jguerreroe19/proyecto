@@ -14,7 +14,7 @@ $idrol = $_SESSION["idrol"];
 
 //Preparando la sentencia para mostrar el listado de alumnos activos
 try{
-    /***************************************   PARA LA SENTENCIA ES ENECSARIO CONTAR CON INFORMACIÓN EN LAS TABLAS DE SKILLS, CONGRESOS Y VACANTES) ************************************/
+    /***************************************   PARA LA SENTENCIA ES NECESARIO CONTAR CON INFORMACIÓN EN LAS TABLAS DE SKILLS, CONGRESOS Y VACANTES) ************************************/
     $sentencia = $dbh->prepare("SELECT U.*, R.nombre nombrerol FROM USUARIOS U, ROLES R 
                 WHERE U.idrol = R.idrol 
                 AND (U.fechafin < current_date() OR U.fechafin IS NULL) 
