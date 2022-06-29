@@ -8,14 +8,34 @@
 
     <?php
     if(isset($_GET["error"])){
-        $name=$_GET['name'];
-        $sname=$_GET['sname'];
-        $email=$_GET['email'];
+        if (isset($_GET['name'])){
+            $name=$_GET['name'];
+        }else{
+            $name='';
+        }
+
+        if (isset($_GET['sname'])){
+            $sname=$_GET['sname'];
+        }else{
+            $sname='';
+        }
+
+        if (isset($_GET['email'])){
+            $email=$_GET['email'];
+        }else{
+            $email='';
+        }
+
         ?>
+        <label for="name">Nombre(s)</label><br>
         <input type="text" name="name" placeholder="Nombre" value="<?php echo $name;?>" required><br><br>
+        <label for="sname">Apellidos</label><br>
         <input type="text" name="sname" placeholder="Apellidos" value="<?php echo $sname;?>" required><br><br>
+        <label for="email">Email</label><br>
         <input type="text" name="email" placeholder="Email" value="<?php echo $email;?>" required><br><br>
+        <label for="pwd">Contraseña</label><br>
         <input type="password" name="pwd" placeholder="Contraseña" required><br><br>
+        <label for="pwdrepeat">Confirmar contraseña</label><br>
         <input type="password" name="pwdrepeat" placeholder="Confirmar contraseña" required><br><br>
         <button type="submit" name="submit">Registrarse</button><br><br>
         <?php
@@ -36,10 +56,15 @@
         }
     }else{
         ?>
+        <label for="name">Nombre(s)</label><br>
         <input type="text" name="name" placeholder="Nombre" required><br><br>
+        <label for="sname">Apellidos</label><br>
         <input type="text" name="sname" placeholder="Apellidos" required><br><br>
+        <label for="email">Email</label><br>
         <input type="text" name="email" placeholder="Email" required><br><br>
+        <label for="pwd">Contraseña</label><br>
         <input type="password" name="pwd" placeholder="Contraseña" required><br><br>
+        <label for="pwdrepeat">Confirmar contraseña</label><br>
         <input type="password" name="pwdrepeat" placeholder="Confirmar contraseña" required><br><br>
         <button type="submit" name="submit">Registrarse</button><br><br>
         <?php

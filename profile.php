@@ -6,6 +6,7 @@
 ?>
 <section class="personal-info-form">
     <h2> Información personal </h2>
+    <p> Ingresa o edita tus datos </p>
     <form name="dpersonales" id = "dpersonales" action="includes/profile.inc.php" method="post">
 <?php
 //Obteniendo el valor del id de usuario de las variables de sesión.

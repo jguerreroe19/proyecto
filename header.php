@@ -1,5 +1,16 @@
 <?php
+session_set_cookie_params(0);
 session_start();
+
+//Valida si la sesión ya expiró
+if (isset( $_SESSION['last_activity'])){
+    if( $_SESSION['last_activity'] < time()-$_SESSION['expire_time'] ) { 
+        //Redirecciona a la página de logout
+        header("location: includes/logout.inc.php"); 
+    } else{ //Si, todavía no expira, renueva el tiempo de la sesión.
+        $_SESSION['last_activity'] = time();
+    }
+}
 ?>
 
 <!doctype html>
@@ -20,6 +31,9 @@ session_start();
     <!--Archivo local de funciones js -->
     <script type='text/javascript' src='js/functions.js'></script>
 
+    <!--jQuery / Ajax-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
 </head>
 <body>
     <nav>
@@ -35,7 +49,7 @@ session_start();
                     echo '<li class="dropdown">';
                         echo '<a href="#" class="dropbtn">Consultas</a>';
                         echo '<div class="dropdown-content">';
-                            echo '<a href="vacantes.php">Vacantes</a>';
+                            echo '<a href="queryVacancy.php">Vacantes</a>';
                             echo '<a href="congresos.php">Congresos</a>';
                         echo '</div>';
                     echo '</li>';
@@ -55,7 +69,13 @@ session_start();
                             echo '<a href="consAlumnos.php">Alumnos</a>';
                         echo '</div>';
                     echo '</li>';
-                    echo '<li><a href="usuarios.php">Administración de usuarios</a></li>';
+                    echo '<li class="dropdown">';
+                        echo '<a href="#" class="dropbtn">Administración de usuarios</a>';
+                        echo '<div class="dropdown-content">';
+                            echo '<a href="addRole.php">Asignar roles</a>';
+                        echo '</div>';
+                    echo '</li>';
+                    
                     echo '<li class="dropdown">';
                         echo '<a href="#" class="dropbtn">Congresos</a>';
                         echo '<div class="dropdown-content">';
@@ -67,8 +87,8 @@ session_start();
                     echo '<li class="dropdown">';
                         echo '<a href="#" class="dropbtn">Vacantes</a>';
                         echo '<div class="dropdown-content">';
-                            echo '<a href="vacantes.php">Registro</a>';
-                            echo '<a href="vacantes.php">Consulta</a>';
+                            echo '<a href="enterVacancy.php">Registro</a>';
+                            echo '<a href="queryVacancy.php">Consulta</a>';
                             echo '<a href="vacantes.php">Edición</a>';
                         echo '</div>';
                     echo '</li>';

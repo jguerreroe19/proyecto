@@ -12,7 +12,7 @@
 <h2>Consultar Usuarios</h2>
     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
 
-        <label for="Tipo">Buscar por nombre, apellido o correo electrónico. Dejar el campo en blanco para traer todos los resultados</label>
+        <p>Buscar por nombre, apellido o correo electrónico. Dejar el campo en blanco para traer todos los resultados</p>
         </br></br>
 		<input type="text" name="buscar" id="buscar" placeholder="Buscar">
 		<button type="submit" name="submit">Buscar</button>

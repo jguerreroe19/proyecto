@@ -100,7 +100,9 @@
             $idusuario = $_POST["iduser"];
 
             skillsTableQuery($dbh, $idusuario, $tipo, $tipo2, $tipo2a, $tipo3);
-        }
+
+			
+       }
 		?>
 </section>
 <?php
