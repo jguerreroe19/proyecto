@@ -12,14 +12,18 @@ if(isset($_POST["submit"])){
     require_once 'dbh.inc.php';
     require_once 'functions.inc.php';
 
-    //Validando campos vacios y en caso de haberlos agrega el identificador de error en la URL
-    /*if(emptyInputLogin($tipo2, $tipo3) !== false){
-        header("location: ../index.php?error=emptyinput");
+    //Validando campos con el valor "Selecciona una opción"
+    if($tipo2 == "Selecciona"){
+        header("location: ../enterSkills.php?error=wrongdata");
         exit();
     }
-    */
+    if($tipo3 == "Selecciona"){
+        header("location: ../enterSkills.php?error=wrongdata");
+        exit();
+    }
+    
 	
-	//Llamando la función para relizar el login
+	//Llamando la función para guardar el skillz
     RecordSkill($dbh, $tipo2, $tipo3, $idusuario, $tipo);
 		
 
