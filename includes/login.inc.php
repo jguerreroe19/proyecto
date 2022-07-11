@@ -1,5 +1,5 @@
 <?php
-if(isset($_POST["submit"])){
+if(($_SERVER["REQUEST_METHOD"] == "POST")){
     //Obtiene los datos del formulario
     
     $email = $_POST["email"];
@@ -18,9 +18,11 @@ if(isset($_POST["submit"])){
     loginUser($dbh, $email, $pwd);
 
 } else{
+    echo $email;
+    echo $pwd;
     //Regresa a la página inicial
-    header("location: ../index.php");
-    exit();
+    //header("location: ../index.php");
+    //exit();
 }
 
 ?>

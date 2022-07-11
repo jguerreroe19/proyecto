@@ -32,17 +32,6 @@
         return $result;
     }
 
-    //Función para validar vampos vacios en la forma de captura de vacantes
-    function emptyInputVacancy($title, $details, $pdate, $edate, $phone, $email) {
-        $result;
-        if(empty($title) || empty($details) || empty($pdate) || empty($edate) || empty($phone) || empty($email)){
-            $result = true;
-        } else {
-            $result = false;
-        }
-        return $result;
-    }
-
     //Función para validar que las contraseñas ingresadas coincidan
     function pwdMatch($pwd, $pwdRepeat){
         $result;
@@ -57,40 +46,16 @@
 
     //Función para validar si existe el usuario dentro de la base de datos
     function uidExist($dbh, $email){
-        //Variable para almacenar el resultado
+        
         $result;
         //Preparando la sentencia SQL
         $sentencia = $dbh->prepare("SELECT * FROM usuarios WHERE email = :email");
-        //Definiendo los parámetros
         $sentencia->bindParam(':email', $email);
         //Ejecutando la sentencia
         $sentencia->execute();
         //Obteniendo los datos
-        //$usuarios = $sentencia->fetch(PDO::FETCH_ASSOC);
+        $usuarios = $sentencia->fetch(PDO::FETCH_ASSOC);
          
-        //Valiando si trae datos la búsqueda
-        $cuenta = $sentencia->rowCount();
-            
-        if($cuenta >= 1){
-            return $cuenta;
-        } else {
-            $result = false;
-            return $result;
-        }
-    }
-
-    //Función para validar si existe la vancante capturada dentro de la base de datos
-    function vacancyExist($dbh, $title, $details){
-        //Variable para almacenar el resultado
-        $result;
-        //Preparando la sentencia SQL
-        $sentencia = $dbh->prepare("SELECT * FROM vacantes WHERE titulo = :title OR detalles = :details");
-        //Definiendo los parámetros
-        $sentencia->bindParam(':title', $title);
-        $sentencia->bindParam(':details', $details);
-        //Ejecutando la sentencia
-        $sentencia->execute();
-                 
         //Valiando si trae datos la búsqueda
         $cuenta = $sentencia->rowCount();
             
@@ -202,17 +167,7 @@
                     $sid = GetSessionID($dbh,$usuarios["IDUSUARIO"]);
                     if ($sid > 0) {
                         session_id($sid);
-                        session_set_cookie_params(0);
                         session_start();
-                        //Variables para gestionar el tiempo de inactividad
-                        $_SESSION['logged_in'] = true; //Define que la sesión está activa
-                        $_SESSION['last_activity'] = time(); //Establece la hora en la que se inició la sesión (o la última actividad)
-                        
-                        //Llama a la función para obtener el valor del parámetro actual de duración de la sesión
-                        $tiempoSesion = obtieneParametro($dbh, 'expiracion');
-                        $_SESSION['expire_time'] = $tiempoSesion; //Tiempo de expiración en segundos
-
-                        //Variables globales de la sesión actual
                         $_SESSION["userid"] = $usuarios["EMAIL"];
                         $_SESSION["usernombre"] = $usuarios["NOMBRE"];
                         $_SESSION["typeRol"] = $usuarios["nombrerol"];
@@ -239,26 +194,6 @@
             ErrorLog($dbh, $idsesion, 'Error en el proceso de login '.$e, 'OSE_005');
         }
 
-    }
-
-    //Función para obtener el valor de los parámetros de configuración
-    function obtieneParametro($dbh, $parametro){
-        $parametro = 'expiracion';
-        //Preparando la sentencia SQL
-        try{
-        $sentencia = $dbh->prepare("SELECT valor FROM configuracion WHERE parametro = :param");
-        $sentencia->bindParam(':param', $parametro);
-
-        //Ejecutando la sentencia
-        $sentencia->execute();
-        //Obteniendo los datos
-        $resultados = $sentencia->fetch(PDO::FETCH_ASSOC);
-        $valor = $resultados["valor"];
-        return $valor;
-        } catch (PDOException $e){
-            $valor = null;
-            return $valor;
-        } 
     }
 
     //Función para actualizar la información personal
@@ -529,7 +464,7 @@
 	function skillsTable($dbh, $idusuario){
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT S.tipo, NVL(I.nombre, '-') idioma, NVL(T.nombre, '-') tecnologia, N.nivel
+			$sentencia = $dbh->prepare("SELECT S.tipo, NVL(I.nombre, '') idioma, NVL(T.nombre, '') tecnologia, N.nivel
 										FROM skills S
 										INNER JOIN niveles N ON S.IDNIVEL = N.IDNIVEL
 										LEFT OUTER JOIN idiomas I ON S.IDIDIOMA = I.IDIDIOMA
@@ -560,12 +495,12 @@
     function fillComboBox2c($dbh, $opcion, $idusuario){
         if ($opcion == 'Idioma'){
             $query = ("SELECT I.ididioma id, I.nombre
-                            FROM idiomas I
-                            WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
+                            FROM IDIOMAS I
+                            WHERE EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
         } elseif ($opcion == 'Habilidad'){
                 $query = ("SELECT T.idtecnologia id, T.nombre
                             FROM TECNOLOGIAS T
-                            WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
+                            WHERE EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
         }
         try{
                 //Preparando la sentencia
@@ -592,7 +527,7 @@
     function fillComboBox3c($dbh, $opcion){
             try{
                 //Preparando la sentencia
-                $sentencia = $dbh->prepare("SELECT DISTINCT nivel FROM niveles ORDER BY idnivel");
+                $sentencia = $dbh->prepare("SELECT DISTINCT nivel FROM NIVELES ORDER BY idnivel");
                 //Ejecutando la sentencia
                 $sentencia->execute();
                 //Obteniendo los datos
@@ -610,10 +545,10 @@
 	function skillsTableQuery($dbh, $idusuario, $tipo, $tipo2, $tipo2a, $tipo3){
         //Formando el query en base a los datos de consulta
         $queryBase = "SELECT S.tipo, NVL(I.nombre, '') idioma, NVL(T.nombre, '') tecnologia, N.nivel
-                        FROM skills S
-                        INNER JOIN niveles N ON S.IDNIVEL = N.IDNIVEL
-                        LEFT OUTER JOIN idiomas I ON S.IDIDIOMA = I.IDIDIOMA
-                        LEFT OUTER JOIN tecnologias T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
+                        FROM SKILLS S
+                        INNER JOIN NIVELES N ON S.IDNIVEL = N.IDNIVEL
+                        LEFT OUTER JOIN IDIOMAS I ON S.IDIDIOMA = I.IDIDIOMA
+                        LEFT OUTER JOIN TECNOLOGIAS T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
                         WHERE S.idusuario = :idusuario";
         
         if($tipo != '0'){
@@ -687,7 +622,7 @@
 	function fillComboBoxEditSkills($dbh, $tipo, $nivel){
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM niveles WHERE TIPO = :tipo ORDER BY idnivel");
+			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM NIVELES WHERE TIPO = :tipo ORDER BY idnivel");
 			//Parámetros
 			$sentencia->bindParam(':tipo', $tipo);
             //Ejecutando la sentencia
@@ -781,7 +716,7 @@
     }
 
     //Función para generar la tabla con el listado de usuarios sin rol asignado
-	function queryUserRole($dbh, $idRol){
+	function queryUserRole($dbh){
         $i = 0;
 		try{
 			//Preparando la sentencia
@@ -804,7 +739,7 @@
                 <td>
                     <select name="idrol" id= "idrol">
                         <?php 
-                            roleList($dbh, $vtabla['idrol'], $idRol);
+                            roleList($dbh, $vtabla['idrol']);
                             //echo $vtabla['idrol'];
                         ?>
                     </select>
@@ -821,17 +756,10 @@
 	}
 
     //Función para generar el listado de roles
-    function roleList($dbh, $opcion, $idRol){
-        //Armando el Query
-        if ($idRol == 2){ //Si es profesor
-            $sqlQuery = "SELECT idrol, nombre FROM roles WHERE idrol IN (1, 4)";
-        } elseif($idRol == 3) { //Si es administrador
-            $sqlQuery = "SELECT idrol, nombre FROM roles";
-        }
-        
+    function roleList($dbh, $opcion){
         try{
             //Preparando la sentencia
-            $sentencia = $dbh->prepare($sqlQuery);
+            $sentencia = $dbh->prepare("SELECT idrol, nombre FROM ROLES");
             //Ejecutando la sentencia
             $sentencia->execute();
             //Obteniendo los datos
@@ -995,340 +923,3 @@
 			//header("location: ../queryLog.php?error=statementerror");
         }	
 	}
-
-    //Función para generar la tabla con el listado de usuarios y los datos generales
-	function queryAlumnos($dbh, $name, $sname, $email, $phone, $skill, $nivel, $sid){
-        try{
-			//Preparando la sentencia
-            $sqlQuery = "SELECT SK.idusuario
-            , NVL(US.apellidos, '') apellidos
-            , NVL(US.nombre, '') nombre
-            , NVL(SK.tipo, '') tipo
-            , NVL(ID.nombre, '-') idioma
-            , NVL(TC.nombre, '-') tecnologia
-            , NVL(NV.nivel, '-') nivel
-            , NVL(US.telefono, '-')telefono
-            , NVL(US.telcontacto, '-')telcontacto
-            , NVL(US.email, '')email
-            , NVL(US.semestre, '')semestre
-            FROM skills SK
-            LEFT JOIN usuarios US ON SK.idusuario  = US.idusuario
-            LEFT JOIN idiomas ID ON SK.ididioma = ID.ididioma
-            LEFT JOIN tecnologias TC ON SK.idtecnologia = TC.idtecnologia
-            LEFT JOIN niveles NV ON SK.idnivel = NV.idnivel
-            WHERE US.idrol = 1";
-            
-            if(!empty($name)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.nombre) LIKE UPPER(NVL('%".$name."%',US.nombre))";
-            }
-            if(!empty($sname)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.apellidos) LIKE UPPER(NVL('%".$sname."%', US.apellidos))";
-            }
-            if(!empty($email)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.email) LIKE UPPER(NVL('%".$email."%', US.email))";
-            }
-            if(!empty($phone)){
-                $sqlQuery = $sqlQuery." AND (US.telefono LIKE NVL('%".$phone."%', US.telefono) OR US.telcontacto LIKE NVL('%".$phone."%', US.telcontacto))";
-            }
-            if(!empty($skill)){
-                $sqlQuery = $sqlQuery." AND (UPPER(ID.nombre) LIKE UPPER(NVL('%".$skill."%', ID.nombre)) OR UPPER(TC.nombre) LIKE UPPER(NVL('%".$skill."%', TC.nombre)))";
-            }
-            if(!empty($nivel)){
-                $sqlQuery = $sqlQuery." AND UPPER(NV.nivel) LIKE UPPER(NVL('%".$nivel."%', NV.nivel))";
-            }
-
-
-            $sqlQuery = $sqlQuery." ORDER BY US.apellidos, SK.tipo DESC, NV.idnivel DESC";
-
-            //Preparando la sentencia
-			$sentencia = $dbh->prepare($sqlQuery);
-            
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            
-            //Obteniendo los datos
-			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tr>
-                    <td><?php echo $vtabla['apellidos'];?></td>    
-                    <td><?php echo $vtabla['nombre'];?></td>
-                    <td><?php echo $vtabla['tipo'];?></td>
-                    <td><?php echo $vtabla['idioma'];?></td>
-                    <td><?php echo $vtabla['tecnologia'];?></td>
-                    <td><?php echo $vtabla['nivel'];?></td>
-                    <td><?php echo $vtabla['telefono'];?></td>
-                    <td><?php echo $vtabla['telcontacto'];?></td>
-                    <td><?php echo $vtabla['email'];?></td>
-                    <td><?php echo $vtabla['semestre'];?></td>
-                </tr>
-			<?php
-			}
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar el listado de usuarios '.$e, 'ISE_006');
-			header("location: ../queryUsers.php?error=statementerror");
-        }	
-	}
-    
-    
-    //Función para eliminar espacios y caracteres especiales de las cadenas de caracteres
-    function validaEntrada($data) {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
-    }
-
-    //Función para guardar el registro de una vacante en la base de datos
-    function RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol){
-        //Definiendo el script de INSERT
-        $SQL_insert = "INSERT INTO vacantes (titulo, detalles, telefono, email, fechapublicacion, fechafin, idusuario)
-                        VALUES (:title, :details, :phone, :email, :pdate, :edate, :iduser)";
-        try{
-            //Preparando la sentencia SQL
-            $sentencia = $dbh->prepare($SQL_insert);
-            //Definiendo los parámetros
-            $sentencia->bindParam(':title', $title);
-            $sentencia->bindParam(':details', $details);
-            $sentencia->bindParam(':phone', $phone);
-            $sentencia->bindParam(':email', $email);
-            $sentencia->bindParam(':pdate', $pdate);
-            $sentencia->bindParam(':edate', $edate);
-            $sentencia->bindParam(':iduser', $iduser);
-            
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            header("location: ../enterVacancy.php?error=none");
-
-        } catch (PDOException $e){
-                //$sentencia->rollback();
-                //throw $e;
-                ErrorLog($dbh, $idsesion, 'Error al registrar la vancante '.$e, 'ISE_008');
-                header("location: ../enterVacancy.php?error=statementerror");
-                /*debug code*/
-                //$vencode = urlencode($e->getMessage());
-                //$valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
-                //header($valorLocation);
-        } 
-    }
-
-    //Función para generar la tabla con el listado de vacantes dependiendo del rol del usuario logueado
-	function vacancyQueryTable($dbh, $idusuario, $idrol, $title, $details, $vflag){
-        //Formando el query en base a los datos de consulta
-        $queryBase = "SELECT NVL(idvacante, '')id
-                           , NVL(titulo, '')titulo
-                           , NVL(detalles, '')detalles
-                           , NVL(fechapublicacion, '')fechapublicacion
-                           , NVL(fechafin, '')fechafin
-                           , NVL(telefono, '')telefono
-                           , NVL(email, '')email
-                           , NVL(idusuario, '')idusuario
-                        FROM vacantes
-                        WHERE 1=1";
-        
-        if($idrol == 1){ //Si el rol es alumno sólo mostrará las vacantes activas y publicadas
-            $queryBase = $queryBase." AND fechapublicacion <= sysdate() AND fechafin >= sysdate()";   
-        }
-        if(!empty($title)){ //Si se indíca el nombre de la vacante 
-            $queryBase = $queryBase." AND UPPER(titulo) LIKE UPPER('%".$title."%')";
-        }
-        if(!empty($details)){ //Si se indíca algúnd detalle de la vacante
-            $queryBase = $queryBase." AND UPPER(detalles) LIKE UPPER('%".$details."%')";
-        }
-        if($vflag == 'Y'){ //Trae las vacantes generadas por el usuario activo
-            $queryBase = $queryBase." AND idusuario = '".$idusuario."'";
-        }
-        
-        
-
-        //echo $queryBase;
-
-        //Cuerpo base del encabezado de la tabla
-        ?>
-            <h2>Listado de vacantes</h2></br>
-            <table>
-            <tr>
-                <th>ID</th>    
-                <th>Titulo</th>
-                <th>Detalles</th>
-                <th>Fecha de publicación</th>
-                <th>Fecha de expiración</th>
-           
-        <?php
-        //Definiendo opciones a mostrar en base al rol
-        switch ($idrol) {
-            case 1: //Alumno
-                ?>
-                        <th>Postularse</th>
-                        </tr>    
-                <?php
-                break;
-            case 2: //Profesor
-                ?>
-                    <th>Teléfono de contacto</th>
-                    <th>Email de contacto</th>
-                    <th>Editar</th>
-                    <th>Eliminar</th>
-                    </tr>    
-                <?php
-                break;
-            case 3: //Administrador
-                ?>
-                    th>Teléfono de contacto</th>
-                    <th>Email de contacto</th>
-                    </tr>    
-                <?php
-                break;
-            default: //Otro
-                ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-                header("location: ../queryVacancy.php?error=statementerror");   
-        }
-
-        try{
-			//Preparando la sentencia
-			$sentencia = $dbh->prepare("$queryBase");
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            //Validando la cantidad de registros devueltos
-			$cuenta = $sentencia->rowCount();
-            if ($cuenta > 0){
-                //Armando la tabla con los datos obtenidos
-                while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<tr>
-				<td><?php echo $vtabla['id']?></td>
-				<td><?php echo $vtabla['titulo']?></td>
-				<td><?php echo $vtabla['detalles']?></td>
-				<td><?php echo $vtabla['fechapublicacion']?></td>
-                <td><?php echo $vtabla['fechafin']?></td>
-                <?php
-                    $cadena = 'var1='.$vtabla['id'].
-                              '&var2='.$vtabla['idusuario'].
-                              '&var3='.$idusuario
-                             ;
-                    $vencode = urlencode($cadena);
-                
-                    //Definiendo opciones a mostrar en base al rol
-                    switch ($idrol) {
-                        case 1: //Alumno
-                            if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
-                                    <td><a href="<?php echo 'includes/applyVacancy.inc.php?'.$cadena;?>">Postularse</a></td>
-                                    </tr>    
-                            <?php
-                            }else{
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
-                                    <td><button class="datos">Mostrar datos</button></td>
-                                    </tr>    
-                            <?php
-                            }
-                            break;
-                        case 2: //Profesor
-                            ?>
-                                <td><?php echo $vtabla['telefono']?></td>
-                                <td><?php echo $vtabla['email']?></td>
-                                <td><a href="<?php echo 'editVacancy.php?'.$cadena;?>">Editar</a></td>
-                                <td><a href="<?php echo 'deleteVacancy.php?'.$cadena;?>">Eliminar</a></td>
-                                </tr>    
-                            <?php
-                            break;
-                        case 3: //Administrador
-                            ?>
-                                <td><?php echo $vtabla['telefono']?></td>
-                                <td><?php echo $vtabla['email']?></td>
-                                </tr>    
-                            <?php
-                            break;
-                        default: //Otro
-                        ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-                        header("location: ../queryVacancy.php?error=statementerror");   
-                    }
-			} //end while 
-            ?>
-            </table>
-            <?php
-            } //End if ($cuenta > 0)
-            else {
-                echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
-            }
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-            header("location: ../queryVacancy.php?error=statementerror");   
-        }	
-	}
-
-    //Funcion para validar que exista la vacante ingresada
-    function validateVacancy($dbh, $idVacante, $idcreador){
-
-        //Variable para almacenar el resultado
-        $result;
-
-        //Preparando la sentencia SQL
-        $sentencia = $dbh->prepare("SELECT * FROM vacantes WHERE idvacante = :idvacante AND idusuario = :idusuario");
-        //Definiendo los parámetros
-        $sentencia->bindParam(':idvacante', $idVacante);
-        $sentencia->bindParam(':idusuario', $idcreador);
-        //Ejecutando la sentencia
-        $sentencia->execute();
-                 
-        //Valiando si trae datos la búsqueda
-        $cuentaReg = $sentencia->rowCount();
-            
-        if($cuentaReg >= 1){
-            return $cuentaReg; //La vacante existe
-        } else {
-            $result = false;
-            return $result;
-        }
-    }
-
-    //Función para validar si el usuario ya está aplicado a la vacante
-    function validateApplyVacancy($dbh, $idVacante, $idpostulante){
-         //Variable para almacenar el resultado
-         $result;
-
-         //Preparando la sentencia SQL
-         $sentencia = $dbh->prepare("SELECT * FROM postulantes WHERE idvacante = :idvacante AND idusuario = :idusuario");
-         //Definiendo los parámetros
-         $sentencia->bindParam(':idvacante', $idVacante);
-         $sentencia->bindParam(':idusuario', $idpostulante);
-         //Ejecutando la sentencia
-         $sentencia->execute();
-                  
-         //Valiando si trae datos la búsqueda
-         $cuentaReg = $sentencia->rowCount();
-             
-         if($cuentaReg >= 1){
-             return $cuentaReg; //El alumno ya está postulado
-         } else {
-             $result = false;
-             return $result;
-         }
-    }
-
-    //Función para postular alumno a una vacante
-    function applyVacancy($dbh, $idVacante, $idpostulante){
-
-        //Variable para almacenar el resultado
-        $result;
-        try{
-            //Preparando la sentencia SQL
-            $sentencia = $dbh->prepare("INSERT INTO postulantes (idvacante, idusuario) VALUES (:idvacante, :idusuario)");
-            //Definiendo los parámetros
-            $sentencia->bindParam(':idvacante', $idVacante);
-            $sentencia->bindParam(':idusuario', $idpostulante);
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            $result = true;
-
-        }catch (PDOException $e){
-            $result = false;
-            ErrorLog($dbh, $idsesion, 'Error al postular alumno a vacante '.$e, 'ISE_010');
-        }
-        return $result;
-    }
-
-

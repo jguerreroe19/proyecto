@@ -5,6 +5,7 @@
 	require_once 'includes/functions.inc.php';
     //Definiendo el idusuario en base a la variable de sesión
 	$idusuario = $_SESSION["idusuario"]; 
+    $idRol = $_SESSION["idrol"];
 ?>
     
 <section class="addRole-form">
@@ -20,7 +21,7 @@
         </tr>
         <?php
             //Llamando la función para armar el cuerpo de la tabla
-            queryUserRole($dbh);
+            queryUserRole($dbh, $idRol);
         ?>	
     </table>
     <br><br>
