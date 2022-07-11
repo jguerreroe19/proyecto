@@ -8,7 +8,7 @@
     $idrol = $_SESSION["idrol"];
 ?>
     
-<section class="queryskills-form">
+<section class="queryvacancy-form">
 <h2> Consulta de Vacantes</h2>
     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
 
@@ -47,6 +47,19 @@
             //Llamando la función para armar la tabla
             vacancyQueryTable($dbh, $idusuario, $idrol, $title, $details, $vflag);
 
+            ?>
+            <div id="popup" style="display: none;">     
+            <div class="content-popup">        
+            <div class="close"><a href="#" id="close">Cerrar</a></div>         
+            <div>          
+            <h2 id = "tituloPopUp">Título del pop up</h2>             
+            <p id = "datosPopUp">Datos de contacto</p>             
+            <p id = "datostel">Telefono: </p>             
+            <p id = "datosemail">Email: </p>
+            <div style="float:left; width:100%;"> </div> </div></div></div>
+            <div class="popup-overlay"></div> 
+            <?php
+
             }
             ?>
 
@@ -62,12 +75,66 @@
 					echo "<p>Habilidad eliminada correctamente!</p>";
 				}else if($_GET["error"] == "errorDelete"){
 					echo "<p>No se pudo eliminar la habilidad. Intente nuevamente o contacte al administrador.</p>";
+				}else if($_GET["error"] == "statementerror"){
+					echo "<p>Error en el módulo de vacantes. Intente nuevamente o contacte al administrador.</p>";
+				}else if($_GET["error"] == "vacancynotexist"){
+					echo "<p>No se encontró la vancante seleccionada. Intente nuevamente o contacte al administrador.</p>";
+				}else if($_GET["error"] == "applyvacancyerror"){
+					echo "<p>Se produjo un error en el proceso de postulación. Intentelo nuevamente</p>";
+				}else if($_GET["error"] == "none"){
+					echo "<p>Vacante aplicada exitosamente. Consulte las vacantes nuevamete para ver los datos de contacto.</p>";
+				}else if($_GET["error"] == "vacancyalreadyapplied"){
+					echo "<p>La vacante seleccionada ya fue aplicada</p>";
 				}
+                
+                
+                
 		}
 
 
 		?>
 </section>
+
+<script>
+    //Función para mostrar los datos de contacto cuando una vacante ya fue aplicada
+    $(document).ready(function(){
+        $(".datos").on('click',function(){
+            var currentRow =$(this).closest("tr");
+            //var col1=currentRow.find("td:eq(0)").text();
+            var col2=currentRow.find("td:eq(1)").text();
+            //var col3=currentRow.find("td:eq(2)").text();
+            //var col4=currentRow.find("td:eq(3)").text();
+            //var col5=currentRow.find("td:eq(4)").text();
+            var col6=currentRow.find("td:eq(5)").text();
+            var col7=currentRow.find("td:eq(6)").text();
+            
+            //alert(col1 + "\n" + col2 + "\n" + col3 + "\n" + col4 + "\n" + col5 + "\n" + col6+ "\n" + col7);
+
+            $("#tituloPopUp").text(function(i, origText){
+            return "Vacante: " + col2; 
+            });
+            
+            $("#datostel").text(function(i, origText){
+            return "Telefono: " + col6;
+            });
+
+            $("#datosemail").text(function(i, origText){
+            return "Email: " + col7;
+            });
+            
+            $('#popup').fadeIn('slow');         
+            $('.popup-overlay').fadeIn('slow');         
+            $('.popup-overlay').height($(window).height());         
+            return false;
+        });
+
+        $('#close').on('click', function(){         
+            $('#popup').fadeOut('slow');         
+            $('.popup-overlay').fadeOut('slow');         
+        return false;     });
+    });
+</script>
+
 <?php
     include_once 'footer.php';
 ?>

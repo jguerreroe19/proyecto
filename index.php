@@ -9,12 +9,16 @@
         } else {
     ?>        
     <h2>Acceso</h2>
-    <form action="includes/login.inc.php" method="post">
+    <form action="includes/login.inc.php" method="post" id="formLogin">
         <label for="email">Email</label><br>
-        <input type="text" name="email" placeholder="Email"><br><br>
+        <input type="text" id="email" name="email" class= "correoe" placeholder="Email">
+            <i class="bi bi-asterisk malEmail" style="color:red; display: none; font-size:0.5vw;"> Email no válido</i>
+			<i class="bi bi-check-lg okEmail" style="color:green; display: none; font-size:0.5vw;"></i>
+        <br><br>
         <label for="pwd">Contraseña</label><br>
-        <input type="password" name="pwd" placeholder="Contraseña"><br><br>
-        <button type="submit" name="submit">Ingresar</button><br><br>
+        <input type="password" id="pwd" name="pwd" placeholder="Contraseña"><br><br>
+        <button type="button" id="btnEnviarLogin">Ingresar</button>
+        <br><br>
     </form>
     <?php
         }

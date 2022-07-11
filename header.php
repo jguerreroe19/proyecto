@@ -19,20 +19,21 @@ if (isset( $_SESSION['last_activity'])){
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Gestion de alumnos de la carrera ICI</title>
     
-    <!--Page Icon -->
+    <!--Icono de la página-->
     <link rel="icon" type="image/png" href="img/logo.png" sizes="64x64">
     
-    <!--Local Stylesheet -->
+    <!--Hoja de estilo local-->
     <link rel="stylesheet" type="text/css" href="css/styles.css">
 
-    <!--Bootstrap Icons -->
+    <!--Iconos Bootstrap-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
-
-    <!--Archivo local de funciones js -->
-    <script type='text/javascript' src='js/functions.js'></script>
 
     <!--jQuery / Ajax-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!--Archivo local de funciones js-->
+    <script type='text/javascript' src='js/functions.js'></script>
+    <script type='text/javascript' src='js/funcionesJQ.js'></script>
 
 </head>
 <body>

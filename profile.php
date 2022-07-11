@@ -16,7 +16,7 @@ try{
     $sentencia = $dbh->prepare("SELECT NVL(nombre, '') nombre, NVL(apellidos, '') apellidos, NVL(fechanacimiento, '') fechanacimiento
                                 , NVL(telefono, '') telefono, NVL(email, '') email, NVL(telcontacto, '') telcontacto, NVL(semestre, '') semestre
                                 , NVL(numeromatricula, '') numeromatricula, NVL(numeroempleado, '') numeroempleado
-                                FROM USUARIOS WHERE idusuario = :idusuario");
+                                FROM usuarios WHERE idusuario = :idusuario");
     $sentencia->bindParam(':idusuario', $idusuario);
     //Ejecutando la sentencia
     $sentencia->execute();
@@ -32,7 +32,7 @@ try{
         <label for="phone">Teléfono:</label></br>
         <input type="text" name="phone" id="phone" placeholder="Teléfono" value= "<?php echo $usuario["telefono"];?>"><br><br>
         <label for="email">Email:</label></br>
-        <input type="text" name="email" id="email" placeholder="Email" value= "<?php echo $usuario["email"];?>" required><br><br>
+        <input type="text" name="email" id="email" placeholder="Email" value= "<?php echo $usuario["email"];?>" readonly><br><br>
         <label for="cphone">Teléfono de contacto:</label></br>
         <input type="text" name="cphone" id="cphone" placeholder="Teléfono de contacto" value= "<?php echo $usuario["telcontacto"];?>"><br><br>
 <?php        
@@ -62,10 +62,18 @@ try{
     ErrorLog($dbh, $idsesion, 'No se pudieron recuperar los datos del usuario. '.$e, 'OSE_004');
 }
 ?>
-         <button type="submit" name="submit">Guardar</button><br><br>
-         <!--<input type="submit" name="submit" value="Guardar"/>-->
+         <button type="button" id="btnEnviar">Guardar</button>
+         <br><br>
+         <!--<button type="submit" name="submit">Guardar</button>-->
     </form>
+</section>
+
+<!--Muestra la respuesta que se recibe de Ajax-->
+<div id="respuesta"></div>
+
+
 <?php
+    /*
     if(isset($_GET["error"])){
         if($_GET["error"] == "emptyinput"){
             echo "<p>Los campos no pueden estar vacios</p>";
@@ -75,8 +83,57 @@ try{
             echo "<p>Datos actualizados exitosamente!</p>";
         }
     }
+    */
 ?>
-</section>
+
+<script>
+			$('#btnEnviar').click(function(){  
+			
+			var vName = $('#name').val();
+			var vSname = $('#sname').val();
+			var correo = $('#email').val();
+            var fecnac = $('#bdate').val();
+			var tel = $('#phone').val();
+            var telcont = $('#cphone').val();
+
+            var semEmp = $('#semEmp').val();
+            var mat = $('#matricula').val();
+            var idusr = $('#iduser').val();
+            var idsesn = $('#idsesion').val();
+            var idrl = $('#idrol').val();
+
+            
+			
+			var ruta = "name="+vName
+                      +"&sname="+vSname
+                      +"&email="+correo
+                      +"&bdate="+fecnac
+                      +"&phone="+tel
+                      +"&cphone="+telcont
+                      +"&semEmp="+semEmp
+                      +"&matricula="+mat
+                      +"&iduser="+idusr
+                      +"&idsesion="+idsesn
+                      +"&idrol="+idrl;
+			
+			$.ajax({
+				url: 'includes/profile.inc.php',
+				type: 'POST',
+				data: ruta,
+			})
+			.done(function(res){
+				$('#respuesta').html(res)
+			})
+			.fail(function(){
+				console.log("Fallo");
+			})
+			.always(function(){
+				console.log("Complete");
+			});
+			
+			});
+	
+	</script>
 
 <?php
     include_once 'footer.php';
