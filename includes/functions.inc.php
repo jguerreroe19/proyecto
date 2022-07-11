@@ -1125,15 +1125,20 @@
                         FROM vacantes
                         WHERE 1=1";
         
-        if(!empty($title)){
+        if($idrol == 1){ //Si el rol es alumno sólo mostrará las vacantes activas y publicadas
+            $queryBase = $queryBase." AND fechapublicacion <= sysdate() AND fechafin >= sysdate()";   
+        }
+        if(!empty($title)){ //Si se indíca el nombre de la vacante 
             $queryBase = $queryBase." AND UPPER(titulo) LIKE UPPER('%".$title."%')";
         }
-        if(!empty($details)){
+        if(!empty($details)){ //Si se indíca algúnd detalle de la vacante
             $queryBase = $queryBase." AND UPPER(detalles) LIKE UPPER('%".$details."%')";
         }
-        if($vflag == 'Y'){
+        if($vflag == 'Y'){ //Trae las vacantes generadas por el usuario activo
             $queryBase = $queryBase." AND idusuario = '".$idusuario."'";
         }
+        
+        
 
         //echo $queryBase;
 
@@ -1147,11 +1152,9 @@
                 <th>Detalles</th>
                 <th>Fecha de publicación</th>
                 <th>Fecha de expiración</th>
-                <th>Teléfono de contacto</th>
-                <th>Email de contacto</th>
-            
+           
         <?php
-
+        //Definiendo opciones a mostrar en base al rol
         switch ($idrol) {
             case 1: //Alumno
                 ?>
@@ -1161,6 +1164,8 @@
                 break;
             case 2: //Profesor
                 ?>
+                    <th>Teléfono de contacto</th>
+                    <th>Email de contacto</th>
                     <th>Editar</th>
                     <th>Eliminar</th>
                     </tr>    
@@ -1168,11 +1173,14 @@
                 break;
             case 3: //Administrador
                 ?>
+                    th>Teléfono de contacto</th>
+                    <th>Email de contacto</th>
                     </tr>    
                 <?php
                 break;
             default: //Otro
-               echo "El rol no permite consultar vacantes"; //////////// Agregar manejo de Errores
+                ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
+                header("location: ../queryVacancy.php?error=statementerror");   
         }
 
         try{
@@ -1192,31 +1200,36 @@
 				<td><?php echo $vtabla['detalles']?></td>
 				<td><?php echo $vtabla['fechapublicacion']?></td>
                 <td><?php echo $vtabla['fechafin']?></td>
-                <td><?php echo $vtabla['telefono']?></td>
-                <td><?php echo $vtabla['email']?></td>
-                <td><?php echo $vtabla['idusuario']?></td>
                 <?php
                     $cadena = 'var1='.$vtabla['id'].
-                             '&var2='.$vtabla['titulo'].
-                             '&var3='.$vtabla['detalles'].
-                             '&var4='.$vtabla['fechapublicacion'].
-                             '&var5='.$vtabla['fechafin'].
-                             '&var6='.$vtabla['telefono'].
-                             '&var6='.$vtabla['email'].
-                             '&var7='.$vtabla['idusuario']
+                              '&var2='.$vtabla['idusuario'].
+                              '&var3='.$idusuario
                              ;
                     $vencode = urlencode($cadena);
                 
-                    
+                    //Definiendo opciones a mostrar en base al rol
                     switch ($idrol) {
                         case 1: //Alumno
+                            if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
                             ?>
+                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
                                     <td><a href="<?php echo 'includes/applyVacancy.inc.php?'.$cadena;?>">Postularse</a></td>
                                     </tr>    
                             <?php
+                            }else{
+                            ?>
+                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
+                                    <td><button class="datos">Mostrar datos</button></td>
+                                    </tr>    
+                            <?php
+                            }
                             break;
                         case 2: //Profesor
                             ?>
+                                <td><?php echo $vtabla['telefono']?></td>
+                                <td><?php echo $vtabla['email']?></td>
                                 <td><a href="<?php echo 'editVacancy.php?'.$cadena;?>">Editar</a></td>
                                 <td><a href="<?php echo 'deleteVacancy.php?'.$cadena;?>">Eliminar</a></td>
                                 </tr>    
@@ -1224,11 +1237,14 @@
                             break;
                         case 3: //Administrador
                             ?>
+                                <td><?php echo $vtabla['telefono']?></td>
+                                <td><?php echo $vtabla['email']?></td>
                                 </tr>    
                             <?php
                             break;
                         default: //Otro
-                        echo "El rol no permite consultar vacantes";  //////////// Agregar manejo de Errores
+                        ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
+                        header("location: ../queryVacancy.php?error=statementerror");   
                     }
 			} //end while 
             ?>
@@ -1239,6 +1255,80 @@
                 echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
             }
         }catch (PDOException $e){
-            echo('Error al generar la tabla de vacantes'.$e); //////////// Agregar manejo de Errores
+            ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
+            header("location: ../queryVacancy.php?error=statementerror");   
         }	
 	}
+
+    //Funcion para validar que exista la vacante ingresada
+    function validateVacancy($dbh, $idVacante, $idcreador){
+
+        //Variable para almacenar el resultado
+        $result;
+
+        //Preparando la sentencia SQL
+        $sentencia = $dbh->prepare("SELECT * FROM vacantes WHERE idvacante = :idvacante AND idusuario = :idusuario");
+        //Definiendo los parámetros
+        $sentencia->bindParam(':idvacante', $idVacante);
+        $sentencia->bindParam(':idusuario', $idcreador);
+        //Ejecutando la sentencia
+        $sentencia->execute();
+                 
+        //Valiando si trae datos la búsqueda
+        $cuentaReg = $sentencia->rowCount();
+            
+        if($cuentaReg >= 1){
+            return $cuentaReg; //La vacante existe
+        } else {
+            $result = false;
+            return $result;
+        }
+    }
+
+    //Función para validar si el usuario ya está aplicado a la vacante
+    function validateApplyVacancy($dbh, $idVacante, $idpostulante){
+         //Variable para almacenar el resultado
+         $result;
+
+         //Preparando la sentencia SQL
+         $sentencia = $dbh->prepare("SELECT * FROM postulantes WHERE idvacante = :idvacante AND idusuario = :idusuario");
+         //Definiendo los parámetros
+         $sentencia->bindParam(':idvacante', $idVacante);
+         $sentencia->bindParam(':idusuario', $idpostulante);
+         //Ejecutando la sentencia
+         $sentencia->execute();
+                  
+         //Valiando si trae datos la búsqueda
+         $cuentaReg = $sentencia->rowCount();
+             
+         if($cuentaReg >= 1){
+             return $cuentaReg; //El alumno ya está postulado
+         } else {
+             $result = false;
+             return $result;
+         }
+    }
+
+    //Función para postular alumno a una vacante
+    function applyVacancy($dbh, $idVacante, $idpostulante){
+
+        //Variable para almacenar el resultado
+        $result;
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("INSERT INTO postulantes (idvacante, idusuario) VALUES (:idvacante, :idusuario)");
+            //Definiendo los parámetros
+            $sentencia->bindParam(':idvacante', $idVacante);
+            $sentencia->bindParam(':idusuario', $idpostulante);
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            $result = true;
+
+        }catch (PDOException $e){
+            $result = false;
+            ErrorLog($dbh, $idsesion, 'Error al postular alumno a vacante '.$e, 'ISE_010');
+        }
+        return $result;
+    }
+
+
