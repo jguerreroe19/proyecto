@@ -7,9 +7,9 @@
     if (isset($_SESSION["sid"])){
 ?>
 <section class="personal-info-form">
-    <h2> Captura de vacantes </h2>
-    <p> Ingresa los datos de la vacante </p>
-    <form name="dvacancy" id = "dvacancy" action="includes/enterVacancy.inc.php" method="post">
+    <h2> Captura de congresos </h2>
+    <p> Ingresa los datos del congreso </p>
+    <form name="dvacancy" id = "formEnterCongress" action="includes/enterCongress.inc.php" method="post">
 <?php
 //Obteniendo el valor del id de usuario de las variables de sesión.
 $idusuario = $_SESSION["idusuario"];
@@ -22,29 +22,38 @@ $fechaFin = date("Y-m-d", $d);
 $manana = date("Y-m-d", $m);
 $fechaFin2 = date("Y-m-d", $d2);
 ?>
-        <label for="name">Título:</label></br>    
-        <input type="text" name="title" id="title" placeholder="Título"  required><br><br>
-        <label for="sname">Detalles:</label></br>
+        <label for="cname">Nombre:</label></br>    
+        <input type="text" name="cname" id="cname" placeholder="Nombre"  required><br><br>
+        <label for="details">Detalles:</label></br>
         <textarea name="details" id="details" rows="10" cols="50">
         </textarea><br><br>
-        <label for="bdate">Fecha de publicación:</label></br>
-        <input type="date" value="<?php echo $hoy; ?>" min="<?php echo $hoy;?>" max="<?php echo $fechaFin;?>" name="pdate" id="pdate" placeholder="Fecha de publicación" required><br><br>
-        <label for="bdate">Fecha de vencimiento:</label></br>
-        <input type="date" value="<?php echo $fechaFin; ?>" min="<?php echo $manana;?>" max="<?php echo $fechaFin2;?>" name="edate" id="edate" placeholder="Fecha de vencimiento" required><br><br>
-        <p> Datos de contacto </p>
-        <label for="phone">Teléfono:</label></br>
-        <input type="text" name="phone" id="phone" placeholder="Teléfono" required><br><br>
-        <label for="email">Email:</label></br>
-        <input type="text" name="email" id="email" placeholder="Email" required><br><br>
+        <label for="sede">Sede:</label></br>    
+        <input type="text" name="sede" id="sede" placeholder="Sede"  required><br><br>
+        <label for="finicio">Fecha de inicio:</label></br>
+        <input type="date" value="<?php echo $hoy; ?>" min="<?php echo $hoy;?>" max="<?php echo $fechaFin;?>" name="finicio" id="finicio" placeholder="Fecha de inicio" required><br><br>
+        <label for="ffin">Fecha de finalización:</label></br>
+        <input type="date" value="<?php echo $fechaFin; ?>" min="<?php echo $manana;?>" max="<?php echo $fechaFin2;?>" name="ffin" id="ffin" placeholder="Fecha de finalización" required><br><br>
+        <label for="reco">Reconocimiento a otorgar:</label></br>
+        <input type="text" name="reco" id="reco" placeholder="Reconocimiento" required><br><br>
+        <label for="pasoc">Proyecto asociado (si aplica):</label></br>
+        <input type="text" name="pasoc" id="pasoc" placeholder="Proyecto asociado" required><br><br>
 
         <input type="hidden" name="iduser" id="iduser" value="<?php echo $idusuario;?>">
         <input type="hidden" name="idsesion" id="idsesion" value="<?php echo $_SESSION["sid"];?>">
         <input type="hidden" name="idrol" id="idrol" value="<?php echo $_SESSION["idrol"];?>">
         
-        <button type="submit" name="submit">Guardar</button><br><br>
+        <button type="button" id="btnGuardar">Guardar</button>
+        <!--<button type="submit" name="submit">Guardar</button>-->
+        <br><br>
         <!--<input type="submit" name="submit" value="Guardar"/>-->
     </form>
 <?php
+    /*
+    if(isset($_GET["error"])){
+        if($_GET["error"] == "statementerror"){
+            echo "<p>Error al tratar de gusardar la vacante. Intentelo nuevamente o reportelo con el administrador.</p>";
+        }
+    }
     if(isset($_GET["error"])){
         if($_GET["error"] == "emptyinput"){
             echo "<p>Los campos no pueden estar vacios</p>";
@@ -55,9 +64,12 @@ $fechaFin2 = date("Y-m-d", $d2);
         }else if($_GET["error"] == "none"){
             echo "<p>Vacante guardada exitosamente!</p>";
         }
-    }
+    }*/
 ?>
 </section>
+
+<!--Muestra la respuesta que se recibe de Ajax-->
+<div id="respuesta"></div>
 
 <script>
     //Asigna el valor de la fecha de publicación como valor minimo para la fecha de finalización
@@ -109,7 +121,6 @@ $fechaFin2 = date("Y-m-d", $d2);
         }
 
 
-
         //Formando nueva fecha
         var nuevaFecha = year + "-" + month + "-" + day;
         var nuevaFechaM = yearM + "-" + monthM + "-" + dayM;
@@ -125,14 +136,60 @@ $fechaFin2 = date("Y-m-d", $d2);
         $("#edate").attr("max", nuevaFechaF);
         $("#edate").val(nuevaFecha);
     });
+
+    //Submit form
+    $('#btnGuardar').click(function(){  
+			
+			var vcname = $('#cname').val();
+			var vdetails = $('#details').val();
+			var vsede = $('#sede').val();
+            var vfinicio = $('#finicio').val();
+			var vffin = $('#ffin').val();
+            var vreco = $('#reco').val();
+            var vpasoc = $('#pasoc').val();
+
+            var vidusr = $('#iduser').val();
+            var vidsesn = $('#idsesion').val();
+            var vidrl = $('#idrol').val();
+
+            
+			
+			var ruta = "cname="+vcname
+                      +"&details="+vdetails
+                      +"&sede="+vsede
+                      +"&finicio="+vfinicio
+                      +"&ffin="+vffin
+                      +"&reco="+vreco
+                      +"&pasoc="+vpasoc
+                      +"&iduser="+vidusr
+                      +"&idsesion="+vidsesn
+                      +"&idrol="+vidrl;
+            //console.log(ruta);
+			
+			$.ajax({
+				url: 'includes/enterCongress.inc.php',
+				type: 'POST',
+				data: ruta,
+			})
+			.done(function(res){
+				$('#respuesta').html(res)
+			})
+			.fail(function(){
+				console.log("Fallo");
+			})
+			.always(function(){
+				console.log("Complete");
+			});
+			
+	});
 </script>
 
 <?php
-    }else{
-        //Redirecciona al index si no hay sesión activa
-        header("location: index.php");
-        exit();   
-    }
+}else{
+    //Redirecciona al index si no hay sesión activa
+    header("location: index.php");
+    exit();   
+}
     include_once 'footer.php';
 ?>
 

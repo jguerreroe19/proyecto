@@ -3,6 +3,8 @@
 	//Incluyendo archivos externos
 	require_once 'includes/dbh.inc.php';
 	require_once 'includes/functions.inc.php';
+	//Valida si hay sesión activa, de lo contrario redirecciona al index.
+	if (isset($_SESSION["sid"])){
 
 	if(isset($_GET["var1"])){
 		//Obtiene los datos de la URL
@@ -39,6 +41,11 @@
 		</form>
 
 <?php
+}
+}else{
+    //Redirecciona al index si no hay sesión activa
+    header("location: index.php");
+    exit();   
 }
     include_once 'footer.php';
 ?>
