@@ -3,6 +3,8 @@
 	//Incluyendo archivos externos
 	require_once 'includes/dbh.inc.php';
 	require_once 'includes/functions.inc.php';
+	//Valida si hay sesión activa, de lo contrario redirecciona al index.
+	if (isset($_SESSION["sid"])){
     //Definiendo el idusuario en base a la variable de sesión
 	$idusuario = $_SESSION["idusuario"]; 
 ?>
@@ -123,5 +125,10 @@ $( "#Tipo2" ).change(function () {
 </script>
 
 <?php
+	}else{
+		//Redirecciona al index si no hay sesión activa
+		header("location: index.php");
+		exit();   
+	}
     include_once 'footer.php';
 ?>

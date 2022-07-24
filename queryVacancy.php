@@ -6,6 +6,8 @@
     //Definiendo el idusuario en base a la variable de sesión
 	$idusuario = $_SESSION["idusuario"]; 
     $idrol = $_SESSION["idrol"];
+    //Valida si hay sesión activa, de lo contrario redirecciona al index.
+    if (isset($_SESSION["sid"])){
 ?>
     
 <section class="queryvacancy-form">
@@ -136,5 +138,10 @@
 </script>
 
 <?php
+}else{
+    //Redirecciona al index si no hay sesión activa
+    header("location: index.php");
+    exit();   
+}
     include_once 'footer.php';
 ?>

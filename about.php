@@ -4,11 +4,17 @@
 <section class="about">
     <h2> Acerca de </h2>
     <paragraph>
-        Portal de control de alumnos de la carrera de Ingeniería en computación inteligente.
+        Sistema de gestión de alumnos de la carrera de Ingeniería en computación inteligente (ICI).
         <br>
-        Universidad Autonoma de Aguascalientes
+        Para la Universidad Autonoma de Aguascalientes
         <br>
         Autor: Javier de Jesus Guerrero Espinosa
+        <br>
+        Institución Educativa: Universidad Abierta y a Distancia de México
+        <br>
+        Carrera: Ingeniería en Desarrollo de Software
+        <br>
+        Proyecto terminal
     </paragraph>
 </section>
 

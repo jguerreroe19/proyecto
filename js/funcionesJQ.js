@@ -2,11 +2,13 @@ $(document).ready(function(){
 	
 	//Función para cambiar el color de los campos vacios / llenos
 	$.fn.cambiaColorInput = function(elemento, valor){ 
+		//var colorOriginal = elemento.css("border-color");
+		//alert (colorOriginal);
 		if (valor == 0){
 			elemento.css("border-color", "red");
-		}else {
-			elemento.css("border-color", "green");
-		}	
+		} else {
+			elemento.css("border-color", "#CED4DA");
+		}
 	}
 
 	//Función para Validar la estructura del correo electrónico
@@ -14,12 +16,10 @@ $(document).ready(function(){
 		var testEmail = /^[A-Z0-9._%+-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}$/i;
 		var regreso = 1;
 		if (testEmail.test(correoE)) {
-			$('.okEmail').show();
 			$('.malEmail').hide();
 			regreso = 1;
 			//alert('Valor regreso: ' + regreso);
 		}else{
-			$('.okEmail').hide();
 			$('.malEmail').show();			
 			regreso = 0;
 			//alert('Valor regreso: ' + regreso);
@@ -33,11 +33,9 @@ $(document).ready(function(){
 		var regreso = 1;
 		if (testPwd.test(contrasena)) {
 			$('.malPwd').hide();
-			$('.okPwd').show();
 			regreso = 1;
 			//alert('Valor regreso: ' + regreso);
 		}else{
-			$('.okPwd').hide();
 			$('.malPwd').show();			
 			regreso = 0;
 			//alert('Valor regreso: ' + regreso);
@@ -47,8 +45,8 @@ $(document).ready(function(){
 	
 	//Función para validar que las contraseñas empaten
 	$.fn.validaPwdRpt = function(){ 
-		var pwd = $('#contrasena').val(); //Obtiene el valor del campo de la contraseña
-		var pwdRpt = $('#contrasenaRpt').val(); //Obtiene el valor del campo de la confirmación de la contraseña
+		var pwd = $('.contrasena').val(); //Obtiene el valor del campo de la contraseña
+		var pwdRpt = $('.contrasenaRpt').val(); //Obtiene el valor del campo de la confirmación de la contraseña
 		var regreso = 1;
 		if (pwd == pwdRpt) {
 			$('.malPwdConf').hide();
@@ -66,6 +64,7 @@ $(document).ready(function(){
 	$.fn.checkCampos = function(obj){ 
 		var camposRellenados = true;
 		obj.find("input").each(function() {
+
 			var $this = $(this);
 			if( $this.val().length <= 1 ) {
 				$.fn.cambiaColorInput($this, 0); // Cambio de color a rojo
@@ -93,37 +92,28 @@ $(document).ready(function(){
 	});
 	
 	//Función para validar la estructura de la contraseña al quitar el foco del campo
-	$('#contrasena').blur(function() {
+	$('.contrasena').blur(function() {
 		$.fn.validaPwd(this.value);
 	});
 	
 	//Función para que coincidan las contraseñas
-	$('#contrasenaRpt').blur(function() {
+	$('.contrasenaRpt').blur(function() {
 		$.fn.validaPwdRpt();
 	});
 
 	
 	//Función para validar los campos en blanco al teclear en cualquier campo del formulario de registro
+	
 	$('#formSignUp input').keyup(function() {
 		//Validación de campos vacios
 		var form = $(this).parents("#formSignUp");
 		$.fn.checkCampos(form);
 	});
 	
-	
+
 	//Función para validar campos antes de enviar el formulario de LOGIN
 	$('#btnEnviarLogin').click(function(){        
-		/*var valorCorreo = $('.correoe').val(); //Obtiene el valor del correo
-		var resultado  = $.fn.validaEmail(valorCorreo); //Obtiene el rasultado de la validación del correo
-		
-		//Valida que los campos cumplan con todas las características para poder enviar el formulario
-		alert('Valor del resultado: ' + resultado);
-		if (resultado == 1) {*/
-			$('#formLogin')[0].submit(); //Submit Form
-		/*
-		}else{
-			alert('FAILED');
-		}*/
+		$('#formLogin')[0].submit(); //Submit Form
 	});
 
 	/*

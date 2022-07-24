@@ -43,6 +43,17 @@
         return $result;
     }
 
+    //Función para validar vampos vacios en la forma de captura de congresos
+    function emptyInputCongress($cname, $details, $sede, $finicio, $ffin, $reco) {
+        $result;
+        if(empty($cname) || empty($details) || empty($sede) || empty($finicio) || empty($ffin) || empty($reco)){
+            $result = true;
+        } else {
+            $result = false;
+        }
+        return $result;
+    }
+
     //Función para validar que las contraseñas ingresadas coincidan
     function pwdMatch($pwd, $pwdRepeat){
         $result;
@@ -102,6 +113,29 @@
         }
     }
 
+    //Función para validar si existe el congreso capturada dentro de la base de datos
+    function congressExist($dbh, $cname, $details){
+        //Variable para almacenar el resultado
+        $result;
+        //Preparando la sentencia SQL
+        $sentencia = $dbh->prepare("SELECT * FROM congresos WHERE nombre = :cname OR detalles = :details");
+        //Definiendo los parámetros
+        $sentencia->bindParam(':cname', $cname);
+        $sentencia->bindParam(':details', $details);
+        //Ejecutando la sentencia
+        $sentencia->execute();
+                 
+        //Valiando si trae datos la búsqueda
+        $cuenta = $sentencia->rowCount();
+            
+        if($cuenta >= 1){
+            return $cuenta;
+        } else {
+            $result = false;
+            return $result;
+        }
+    }
+
     //Función para validar la estructura de la contraseña
     function invalidPwd($clave){
             $contar = 0;
@@ -124,7 +158,7 @@
               $contar++;
            }
            if ((strpos($clave, '$') !== false) || (strpos($clave, '#') !== false) || (strpos($clave, '-') !== false) || (strpos($clave, '_') !== false) || (strpos($clave, '&') !== false) || (strpos($clave, '%') !== false)) {
-                echo 'true';
+                //echo 'true';
             } else {
                 $error_clave = $error_clave."La contraseña debe tener al menos un caracter especial (#,$,-,_,&,%) <br>";
                 $contar++;
@@ -146,6 +180,7 @@
 
     //Función para crear el nuevo usuario
     function createUser($dbh, $name, $sname, $email, $pwd){
+        $result;
         try{
         //Preparando la sentencia SQL
         $sentencia = $dbh->prepare("INSERT INTO usuarios (nombre, apellidos, email, contrasena, idrol) VALUES (:name, :sname, :email, :pwd, 4)");
@@ -159,19 +194,25 @@
         
         //Ejecutando la sentencia
         $sentencia->execute();
-        header("location: ../signup.php?error=none&name=&sname=&email=");
+        $result = 'true';
+        return $result;
+        //header("location: ../signup.php?error=none&name=&sname=&email=");
         } catch (PDOException $e){
             //$sentencia->rollback();
             //throw $e;
             //header("location: ../signup.php?error=stmtfailed");
+            $result = false;
             $vencode = urlencode($e->getMessage());
 		    $valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
             header($valorLocation);
+            return $result;
         } 
     }
 
     //Función para realizar el proceso de login
     function loginUser($dbh, $email, $pwd){
+        //Variable para regresar la información 
+        $respuesta;
         //Preparando la sentencia SQL
         /*
             La sentencia valida que el usuario no esté inactivo (fechafin) o que esté bloqueado, de ser así ya no traerá datos.
@@ -223,15 +264,22 @@
                         exit();
                     } else {
                         ErrorLog($dbh, $idsesion, 'No se pudieron obtener los detalles de la sesión', 'OSE_001');
+                        //$respuesta = 'Error OSE_001: No se pudieron obtener los detalles de la sesión';
+                        //return $respuesta;
                         header("location: ../?error=OSE_001");
                         exit();
                     }
                 } else {
                     ErrorLog($dbh, $idsesion, 'No fue posible generar la sesión', 'OSE_002');
+                    //$respuesta = 'Error OSE_002: No fue posible generar la sesión';
+                    //return $respuesta;
                     header("location: ../?error=OSE_002");
                     exit();
+                    
                 }
             } else if($checkPwd === false) {
+                //$respuesta = 'Datos de acceso incorrectos';
+                //return $respuesta;
                 header("location: ../index.php?error=wronglogin");
                 exit();
             }
@@ -1078,7 +1126,7 @@
         return $data;
     }
 
-    //Función para guardar el registro de una vacante en la base de datos
+    //Función para guardar el registro de una vacante en la base de datos enterCongress.inc.php
     function RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol){
         //Definiendo el script de INSERT
         $SQL_insert = "INSERT INTO vacantes (titulo, detalles, telefono, email, fechapublicacion, fechafin, idusuario)
@@ -1331,4 +1379,289 @@
         return $result;
     }
 
+    //Función para guardar el registro de uncongreso
+    function RecordCongress($dbh, $cname, $details, $sede, $finicio, $ffin, $reco, $pasoc, $iduser, $idsesion, $idrol){
+        $result;
 
+        //Definiendo el script de INSERT. Si el valor del proyecto está vacio se asocia al proyecto de carga inicial
+        if (empty($pasoc)){
+            $pasoc=1;
+        }
+
+        $SQL_insert = "INSERT INTO congresos (nombre, detalles, sede, fechainicio, fechafin, titulo, creadopor, idproyecto)
+        VALUES (:cname, :details, :sede, :finicio, :ffin, :reco, :idusr, :pasoc)";
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare($SQL_insert);
+            //Definiendo los parámetros
+            $sentencia->bindParam(':cname', $cname);
+            $sentencia->bindParam(':details', $details);
+            $sentencia->bindParam(':sede', $sede);
+            $sentencia->bindParam(':finicio', $finicio);
+            $sentencia->bindParam(':ffin', $ffin);
+            $sentencia->bindParam(':reco', $reco);
+            $sentencia->bindParam(':idusr', $iduser);
+            $sentencia->bindParam(':pasoc', $pasoc);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            $result = true;
+            return $result;
+            //header("location: ../enterVacancy.php?error=none");
+
+        } catch (PDOException $e){
+                //$sentencia->rollback();
+                //throw $e;
+                ErrorLog($dbh, $idsesion, 'Error al registrar el congreso '.$e, 'ISE_008');   
+                return $e;
+                //header("location: ../enterCongress.php?error=statementerror");
+                /*debug code*/
+                //$vencode = urlencode($e->getMessage());
+                //$valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
+                //header($valorLocation);
+        } 
+    }
+
+    //Función para armar la tabla de resultados de búsqueda de congresos
+    function queryCongressTable($dbh, $cname, $details, $vflag, $actFlag, $idusuario, $idrol){
+
+            //Formando el query en base a los datos de consulta
+            $queryBase = "SELECT NVL(CN.idcongreso, '')id 
+                               , NVL(CN.nombre, '')nombre
+                               , NVL(CN.detalles, '')detalles
+                               , NVL(CN.sede, '')sede
+                               , NVL(CN.fechainicio, '')fechainicio
+                               , NVL(CN.fechafin, '')fechafin
+                               , NVL(CN.titulo, '')titulo
+                               , CASE NVL(PR.idproyecto, '')
+                                    WHEN 1 THEN 'Sin proyecto asociado'
+                                    ELSE NVL(PR.titulo, '')
+                                 END proyectoasociado
+                               , NVL(PR.descripcion, '')descripcion
+                               , NVL(PR.tipo, '')tipo
+                               , NVL(CN.idproyecto, '')idproyecto
+                            FROM congresos CN
+                            LEFT OUTER JOIN proyectos PR ON CN.idproyecto = PR.idproyecto
+                            WHERE 1=1";
+
+            if($idrol == 1){ //Si el rol es alumno sólo mostrará los congresos activos
+            $queryBase = $queryBase." AND CN.fechainicio <= CURDATE() AND CN.fechafin >= CURDATE()";   
+            }
+            if(!empty($cname)){ //Si se indíca el nombre del congreso 
+            $queryBase = $queryBase." AND UPPER(CN.nombre) LIKE UPPER('%".$cname."%')";
+            }
+            if(!empty($details)){ //Si se indíca algún detalle del congreso
+            $queryBase = $queryBase." AND UPPER(CN.detalles) LIKE UPPER('%".$details."%')";
+            }
+            if($vflag == 'Y'){ //Trae los congresos generados por el usuario activo
+            $queryBase = $queryBase." AND CN.creadopor = '".$idusuario."'";
+            }
+            if($actFlag == 'Y'){ //Trae sólo los congresos activos
+                $queryBase = $queryBase." AND CN.fechainicio <= CURDATE() AND CN.fechafin >= CURDATE()";
+            }
+            //return $queryBase;
+
+                    //Cuerpo base del encabezado de la tabla
+        ?>
+        <h2>Listado de congresos</h2></br>
+        <table id="datosCongreso">
+        <thead>
+        <tr>
+            <th>ID</th>    
+            <th>Nombre</th>
+            <th>Detalles</th>
+            <th>Sede</th>
+            <th>Fecha de inicio</th>
+            <th>Fecha de termino</th>
+            <th>Documento a otorgar</th>
+            <th>Proyecto asociado</th>
+            <th>Detalles del proyecto</th>
+       
+        <?php
+        //Definiendo opciones a mostrar en base al rol
+        switch ($idrol) {
+            case 1: //Alumno
+                ?>
+                        <th>Fecha de Asignación</th>
+                        <th>Asignado por</th>
+                        </tr>
+                        </thead>    
+                <?php
+                break;
+            case 2: //Profesor
+                ?>
+                    <th>Asociar Alumno</th>
+                    <th>Editar</th>
+                    <th>Eliminar</th>
+                    </tr>
+                    </thead>    
+                <?php
+                break;
+            default: //Otro
+                ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
+                echo("Este rol no permite la consulta de congresos");   
+        }
+
+        try{
+			//Preparando la sentencia
+			$sentencia = $dbh->prepare("$queryBase");
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            //Validando la cantidad de registros devueltos
+			$cuenta = $sentencia->rowCount();
+            if ($cuenta > 0){
+                //Armando la tabla con los datos obtenidos
+                while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+			?>
+                <tbody>
+				<tr>
+				<td><?php echo $vtabla['id']?></td>
+				<td><?php echo $vtabla['nombre']?></td>
+				<td><?php echo $vtabla['detalles']?></td>
+                <td><?php echo $vtabla['sede']?></td>
+				<td><?php echo $vtabla['fechainicio']?></td>
+                <td><?php echo $vtabla['fechafin']?></td>
+                <td><?php echo $vtabla['titulo']?></td>
+                <?php //Varia si tiene o no proyecto asignado
+                if($vtabla['proyectoasociado'] =='Sin proyecto asociado') {
+                ?>
+                    <td><?php echo $vtabla['proyectoasociado']?></td>
+                    <td> N/A </td>
+                <?php
+                }else{
+                ?>
+                    <td><?php echo $vtabla['proyectoasociado']?></td>
+                    <td><button name="detalles" class="datos">Detalles</button></td>
+                <?php
+                }
+                ?>
+                
+                <?php
+                    /*
+                    $cadena = 'var1='.$vtabla['id'].
+                              '&var2='.$vtabla['idusuario'].
+                              '&var3='.$idusuario
+                             ;
+                    $vencode = urlencode($cadena);
+                    */
+                    //Definiendo opciones a mostrar en base al rol
+                    switch ($idrol) {
+                        case 1: //Alumno
+                            if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
+                            ?>
+                                    <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['tipo']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
+                                    <td><button class="asignacion">Ver Asignación</button></td>
+                                    </tr>    
+                            <?php
+                            }else{
+                            ?>
+                                    <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['tipo']?></td>
+                                    <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
+                                    </tr>    
+                            <?php
+                            }
+                            break;
+                        case 2: //Profesor
+                            ?>
+                                <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
+                                <td style="display:none;"><?php echo $vtabla['tipo']?></td>
+                                <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
+                                <td><button class="asociar">Asociar Alumno</button></td>
+                                <td><button class="editar">Editar</button></td>
+                                <td><button class="eliminar">Eliminar</button></td>
+                                </tr>    
+                            <?php
+                            break;
+                        default: //Otro
+                        ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
+                        echo("Este rol no permite la consulta de congresos");    
+                    }
+			} //end while 
+            ?>
+            </tbody>
+            </table>
+            <?php
+            } //End if ($cuenta > 0)
+            else {
+                echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
+            }
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
+            echo("Este rol no permite la consulta de congresos Error: " .$e);   
+        }
+    
+    }
+
+    //Función para llenar el combobox de tipo de habilidad/conocimiento
+    function fillComboBoxCongress($dbh){
+        try{
+            $sentencia = $dbh->prepare("SELECT NVL(US.idusuario, '')idusuario , CONCAT(NVL(US.apellidos, ''),' ',NVL(US.nombre, '')) alumno
+                                        FROM usuarios US
+                                        WHERE US.idrol = 1
+                                        AND (US.fechafin <= CURDATE() OR US.fechafin IS NULL)
+                                        AND US.bloqueado IS NULL");
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            //Obteniendo los datos
+		
+			while ($combov1 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+			?>
+				<option value="<?php echo $combov1['idusuario']?>"><?php echo $combov1['alumno']?></option>
+			<?php
+			}
+        }catch (PDOException $e){
+            echo('Error al cargar los datos en el combobox'.$e);
+        }
+
+    }
+
+    //Función para validar si el alumno ya está asociado al congreso
+    function alumnoCongreso($dbh, $idusr, $idcng){
+        //Variable para almacenar el resultado
+        $result;
+        //Preparando la sentencia SQL
+        $sentencia = $dbh->prepare("SELECT * FROM ponentes_v WHERE idcongreso = :idcng AND idusuario = :idusr");
+        //Definiendo los parámetros
+        $sentencia->bindParam(':idcng', $idcng);
+        $sentencia->bindParam(':idusr', $idusr);
+        //Ejecutando la sentencia
+        $sentencia->execute();
+        //Valiando la cantidad de registros devueltos
+        $cuenta = $sentencia->rowCount();
+            
+        if($cuenta >= 1){
+            return $cuenta;
+        } else {
+            $result = false;
+            return $result;
+        }
+    }
+
+    //Función para asociar alumnos a congresos
+    function addPonente($dbh, $idusr, $idcng, $commts, $idSesionUsuario){
+        //Variable para almacenar el resultado
+        $result;
+        try{
+        //Preparando la sentencia SQL
+        $sentencia = $dbh->prepare("INSERT INTO ponentes (idcongreso, idusuario, asignadopor, comentarios) 
+                                                  VALUES (:idcng, :idusr, :idSesionUsuario, :commts);");
+        $sentencia->bindParam(':idcng', $idcng);
+        $sentencia->bindParam(':idusr', $idusr);
+        $sentencia->bindParam(':idSesionUsuario', $idSesionUsuario);
+        $sentencia->bindParam(':commts', $commts);
+
+        //Ejecutando la sentencia
+        $sentencia->execute();
+        $result = 'true';
+        return $result;
+
+        } catch (PDOException $e){
+            $result = false;
+            return $result;
+        } 
+    }

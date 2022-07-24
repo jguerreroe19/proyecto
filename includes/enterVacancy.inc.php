@@ -34,8 +34,8 @@ if(isset($_POST["submit"])){
 
 } else{
     //Regresa a la página inicial
-    echo "entra aqui";
-    //header("location: ../index.php");
+    //echo "entra aqui";
+    header("location: ../index.php");
     exit();
 }
 
