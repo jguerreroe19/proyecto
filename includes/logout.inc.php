@@ -14,7 +14,7 @@ if ($sid == 0){
 };
 session_unset();
 session_destroy();
-header("location: ../index.php?error=sessionexpired");
+header("location: ../index.php?error=sessionclosed");
 exit();
 
 ?>

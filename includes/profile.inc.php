@@ -1,4 +1,8 @@
 <?php
+//Incluyendo archivos externos
+require_once 'dbh.inc.php';
+require_once 'functions.inc.php';
+
 if(($_SERVER["REQUEST_METHOD"] == "POST")){
     
     //Obteniendo datos del formulario
@@ -14,11 +18,6 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     $idsesion =  $_POST["idsesion"];
     $idrol =  $_POST["idrol"];
     
-
-    //Incluyendo archivos externos
-    require_once 'dbh.inc.php';
-    require_once 'functions.inc.php';
-
     //Validando campos obligatorios en blanco
     if(emptyInputPersonalInfo($name, $sname, $email) !== false){
         //header("location: ../profile.php?error=emptyinput");
