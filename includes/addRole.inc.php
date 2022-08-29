@@ -1,36 +1,29 @@
 <?php
-if(isset($_POST["fname"])){
+//Incluyendo archivos externos
+require_once 'dbh.inc.php';
+require_once 'functions.inc.php';
+
+if(($_SERVER["REQUEST_METHOD"] == "POST")){
     
-//Obteniendo datos del formulario
-$name =  $_POST["fname"];
-$sname =  $_POST["sname"];
-$email =  $_POST["email"];
-$idrol =  $_POST["idrol"];
-$idusr =  $_POST["idusuario"];
+    //Obteniendo datos del formulario
+    $idusuario =  $_POST["idusuario"];
+    $newrol =  $_POST["newrol"];
+    $idsesion =  $_POST["idsesion"];
+    $idrol =  $_POST["idrol"];
 
-
-//Variables de sesión
-$idsesion = $_SESSION["sid"];
-
-    //Incluyendo archivos externos
-    require_once 'dbh.inc.php';
-    require_once 'functions.inc.php';
-    require_once 'functions2.inc.php';
-
-    echo $name;
-    echo $sname;
-    echo $email;
-    echo $idrol;
-
-    //Validando que el rol sea distinto a 4
-    if ($idrol ==4){
-        header("location: ../addRole.php?error=nochanges");
-    } else {
-        updateRole($dbh, $idusr, $idrol, $idsesion);  
+    //Validando que se trate de rol administrador o profesor
+    if ($idrol == 3 || $idrol == 2){
+        //Llama la función para actualizar el rol
+        $respuesta = updateRole($dbh, $idusuario, $newrol, $idsesion);
+        echo $respuesta;
+    }else{
+        echo 'invalidRole';
     }
 
-
-}else {
+} else{
+    //Regresa a la página inicial
+    //echo "entra aqui";
     header("location: ../index.php");
+    exit();
 }
    

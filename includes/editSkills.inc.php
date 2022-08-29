@@ -3,26 +3,29 @@
     require_once 'dbh.inc.php';
     require_once 'functions.inc.php';
 
-if(isset($_POST["submit"])){
-    //Obtiene los datos del formulario
-    $tipo = $_POST["tipo"];
-    $skill = $_POST["Habilidad"];
-	$nivel = $_POST["nivel"];
-    $idusuario = $_POST["iduser"];
-    $idsesion =  $_POST["idsesion"];
+    if(($_SERVER["REQUEST_METHOD"] == "POST")){
+        //Obtiene los datos del formulario
+        $tipo = $_POST["tipo"];
+        $skill = $_POST["skill"];
+        $nivel = $_POST["nivel"];
+        $idusuario = $_POST["idusuario"];
+        $idsesion =  $_POST["idsesion"];
 
-    echo '</br> $tipo: '.$tipo;
-    echo '</br> $skill: '.$skill;
-    echo '</br> $nivel: '.$nivel;
-    echo '</br> $idusuario: '.$idusuario;
-   
-    //Llamando a la función para guaradar los cambios
-    UpdateSkill($dbh, $tipo, $skill, $nivel, $idusuario, $idsesion);
+        //Llamando a la función para validar si hay cambios en lo ingresado por el usuario
+        if (validateSkill($dbh, $tipo, $skill, $nivel, $idusuario, $idsesion) != false){
+            $resultado = 'noCambios';
+        }else{
+            //Llamando a la función para guaradar los cambios
+            $resultado = UpdateSkill($dbh, $tipo, $skill, $nivel, $idusuario, $idsesion);        
+        }
 
-} else{
-    //Regresa a la página inicial
-    header("location: ../index.php");
-    exit();
-}
+        echo $resultado;
+
+
+    } else{
+        //Regresa a la página inicial
+        header("location: ../index.php");
+        exit();
+    }
 
 ?>

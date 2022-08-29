@@ -1,5 +1,6 @@
 <?php
     include_once 'header.php';
+    include_once 'header2.php';
     //Incluyendo archivos externos
     require_once 'includes/dbh.inc.php';
     require_once 'includes/functions.inc.php';

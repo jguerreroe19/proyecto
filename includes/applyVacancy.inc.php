@@ -1,42 +1,37 @@
 <?php
-if(isset($_GET["var1"])){
-    //Obtiene los datos del formulario
-    $idVacante = $_GET["var1"];
-    $idcreador = $_GET["var2"];
-    $idpostulante = $_GET["var3"];
-	
-    
     //Incluyendo archivos externos
     require_once 'dbh.inc.php';
     require_once 'functions.inc.php';
 
-    //Validando que exista la vacante
-    if(validateVacancy($dbh, $idVacante, $idcreador) == false){
-        header("location: ../queryVacancy.php?error=vacancynotexist");
-        exit();
-    }
-
-    //Validando si el usuario ya está postulado a la vacante
-    if(validateApplyVacancy($dbh, $idVacante, $idpostulante) !== false){
-        header("location: ../queryVacancy.php?error=vacancyalreadyapplied");
-        exit();
-    }
+    if(($_SERVER["REQUEST_METHOD"] == "POST")){
+        //Obtiene los datos del formulario
+        $idVacante = $_POST["idvacante"];
+        $idcreador = $_POST["idCreado"];
+        $idpostulante = $_POST["idpostulante"];
         
-    //Llamando la función para postular al alumno a la vacante
-    if (applyVacancy($dbh, $idVacante, $idpostulante) !== false){
-        header("location: ../queryVacancy.php?error=none");
-        exit();
-    } else {
-        header("location: ../queryVacancy.php?error=statementerror");
-        exit();
-    } 
-    
-		
+        
+        if(validateVacancy($dbh, $idVacante, $idcreador) == false){ //Validando que exista la vacante
+            //header("location: ../queryVacancy.php?error=vacancynotexist");
+            echo "<p>No se encontró la vancante seleccionada. Intente nuevamente o contacte al administrador.</p>";
+            exit();
+        } else if(validateApplyVacancy($dbh, $idVacante, $idpostulante) !== false){ //Validando si el usuario ya está postulado a la vacante
+            //header("location: ../queryVacancy.php?error=vacancyalreadyapplied");
+            echo "<p>La vacante seleccionada ya fue aplicada</p>";
+            exit();
+        } else if (applyVacancy($dbh, $idVacante, $idpostulante) !== false){ //Llamando la función para postular al alumno a la vacante
+            //header("location: ../queryVacancy.php?error=none");
+            echo "<p>Vacante aplicada exitosamente. Consulte las vacantes nuevamete para ver los datos de contacto.</p>";
+            exit();
+        } else {
+            //header("location: ../queryVacancy.php?error=statementerror");
+            echo "<p>Error en el módulo de vacantes. Intente nuevamente o contacte al administrador.</p>";
+            exit();
+        } 
 
-} else{
-    //Regresa a la página inicial
-    header("location: ../index.php");
-    exit();
-}
+    } else{
+        //Regresa a la página inicial
+        header("location: ../index.php");
+        exit();
+    }
 
 ?>

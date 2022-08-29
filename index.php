@@ -1,5 +1,6 @@
 <?php
     include_once 'header.php';
+    include_once 'header2.php';
 ?>
     <section class="vh-100 gradient-custom">
 <?php
@@ -18,7 +19,7 @@
                                 <form action="includes/login.inc.php" method="post" id="formLogin">
                                 <div class="form-outline form-white mb-4">
                                     <label class="form-label" for="email"><i class="bi bi-envelope"></i> Email</label>    
-                                    <input type="email" id="email" name="email" class="form-control form-control-lg" placeholder="Ingresa tu Email">
+                                    <input type="text" id="email" name="email" class="form-control form-control-lg" placeholder="Ingresa tu Email">
                                 </div>
                                 <div class="form-outline form-white mb-4">
                                     <label class="form-label" for="pwd"><i class="bi bi-key"></i> Contraseña</label>    

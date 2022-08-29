@@ -349,9 +349,12 @@
             
             //Ejecutando la sentencia
             $sentencia->execute();
-            movimientos($dbh, $idsesion, 'UPDATE USUARIOS');
+            movimientos($dbh, $idsesion, 'UPDATE USUARIOS - PERSONAL INFO');
+            
+            //Devolviendo el valor
             $confirm = true;
             return $confirm;
+
         } catch (PDOException $e){
             ErrorLog($dbh, $idsesion, 'No fue posible actualizar la información personal '.$e, 'ISE_001');
             $confirm = false;
@@ -485,14 +488,17 @@
 	
 	//Función para llenar el combobox de habilidades/idiomas
     function fillComboBox2($dbh, $opcion, $idusuario){
-        if ($opcion == 'Idioma'){
+        //Variable para regresar la información 
+        $respuesta='';
+
+		if ($opcion == 'Idioma'){
 			$query = ("SELECT I.ididioma id, I.nombre
-						FROM idiomas I
-						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
+						FROM IDIOMAS I
+						WHERE NOT EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
 		} elseif ($opcion == 'Habilidad'){
 			$query = ("SELECT T.idtecnologia id, T.nombre
 						FROM TECNOLOGIAS T
-						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
+						WHERE NOT EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
 		}
 		try{
 			//Preparando la sentencia
@@ -505,51 +511,56 @@
 			$cuenta = $sentencia->rowCount();
 			if ($cuenta>0){
 				while ($combov2 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-					?>
-						<option value="<?php echo $combov2['id'];?>"><?php echo $combov2['nombre'];?></option>
-					<?php
+					$respuesta = ($respuesta.'<option value="'.$combov2['id'].'">'.$combov2['nombre'].'</option>');
 				}
 			} else {
 				if ($opcion == 'Idioma'){
-					header("location: enterSkills.php?error=nolanguajes");
-					exit;
+					$respuesta = 'nolanguajes';
+					//header("location: index.php?error=nolanguajes");
 				}elseif ($opcion == 'Habilidad') {
-					header("location: enterSkills.php?error=noskills");
-					exit;
+					$respuesta = 'noskills';
+					//header("location: index.php?error=noskills");
 				}
-			}	
+			}
+		return $respuesta;			
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox2'.$e);
+            $respuesta = ('Error al cargar los datos en el combobox2'.$e);
+			return $respuesta;
         }
     }
 	
 	//Función para llenar el combobox del nivel de las habilidades/idiomas
 	function fillComboBox3($dbh, $opcion){
+		//Variable para regresar la información 
+        $respuesta='';
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM niveles WHERE TIPO = :opcion ORDER BY idnivel");
+			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM NIVELES WHERE TIPO = :opcion ORDER BY idnivel");
 			//Parámetros
 			$sentencia->bindParam(':opcion', $opcion);
             //Ejecutando la sentencia
             $sentencia->execute();
             //Obteniendo los datos
 			while ($combov3 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<option value="<?php echo $combov3['idnivel']?>"><?php echo $combov3['nivel']?></option>
-			<?php
+				
+				$respuesta = ($respuesta.'<option value="'.$combov3['idnivel'].'">'.$combov3['nivel'].'</option>');
 			}
+			return $respuesta;
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox 3'.$e);
+            $respuesta = ('Error al cargar los datos en el combobox 3'.$e);
+			return $respuesta;
         }
 	}
 	
-	//Función para registrar un skill en la base de datos
+	//Finción para registrar un skill en la base de datos
 	function RecordSkill($dbh, $tipo2, $tipo3, $idusuario, $tipo){
+		//Variable para regresar la información 
+        $respuesta='';
 		try{
 			if ($tipo == 'Idioma'){
-				$query = "INSERT INTO skills (idusuario, creadopor, ididioma, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
+				$query = "INSERT INTO SKILLS (idusuario, creadopor, ididioma, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
 			} elseif ($tipo == 'Habilidad') {
-				$query = "INSERT INTO skills (idusuario, creadopor, idtecnologia, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
+				$query = "INSERT INTO SKILLS (idusuario, creadopor, idtecnologia, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
 			}
 			
 			//Preparando la sentencia SQL
@@ -563,25 +574,30 @@
 					
 			//Ejecutando la sentencia
 			$sentencia->execute();
+			$respuesta = 'success';
+			return $respuesta;
 			
-			header("location: ../enterSkills.php?error=none"); /**************************************REVISAR LA URL DE REDIRECCIÓN*/
+			//header("location: ../index.php?error=none"); /**************************************REVISAR LA URL DE REDIRECCIÓN*/
 		} catch (PDOException $e){
+			$respuesta = '<p>Error al tratar de guardar la habilidad. '.$e.'</p>';
+			return $respuesta;
 			/******************************************************************************* IMPRIMIR ERROR */
 			/*$vencode = urlencode($e->getMessage());
 			$valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
 			header($valorLocation);*/
 		} 
 	}
-	
 	//Función para generar la tabla con el listado de habilidades y conocimientos
 	function skillsTable($dbh, $idusuario){
+		//Variable para regresar la información 
+        $respuesta='';
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT S.tipo, NVL(I.nombre, '-') idioma, NVL(T.nombre, '-') tecnologia, N.nivel
-										FROM skills S
-										INNER JOIN niveles N ON S.IDNIVEL = N.IDNIVEL
-										LEFT OUTER JOIN idiomas I ON S.IDIDIOMA = I.IDIDIOMA
-										LEFT OUTER JOIN tecnologias T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
+			$sentencia = $dbh->prepare("SELECT S.tipo, NVL(I.nombre, '') idioma, NVL(T.nombre, '') tecnologia, N.nivel
+										FROM SKILLS S
+										INNER JOIN NIVELES N ON S.IDNIVEL = N.IDNIVEL
+										LEFT OUTER JOIN IDIOMAS I ON S.IDIDIOMA = I.IDIDIOMA
+										LEFT OUTER JOIN TECNOLOGIAS T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
 										WHERE S.idusuario = :idusuario
 										ORDER BY S.tipo");
 			//Parámetros
@@ -590,17 +606,13 @@
             $sentencia->execute();
             //Obteniendo los datos
 			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<tr>
-				<td><?php echo $vtabla['tipo']?></td>
-				<td><?php echo $vtabla['idioma']?></td>
-				<td><?php echo $vtabla['tecnologia']?></td>
-				<td><?php echo $vtabla['nivel']?></td>
-				</tr>
-			<?php
+			$respuesta = $respuesta.'<tr><td>'.$vtabla['tipo'].'</td><td>'.$vtabla['idioma'].'</td><td>'.$vtabla['tecnologia'].'</td><td>'.$vtabla['nivel'].'</td></tr>';
 			}
+			return $respuesta;
+			
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox 3'.$e);
+            $respuesta ='Error al cargar los datos en el combobox 3'.$e;
+			return $respuesta;
         }	
 	}
 
@@ -655,9 +667,11 @@
     }
 
     //Función para generar la tabla con el listado de habilidades y conocimientos en la pantalla de consulta
-	function skillsTableQuery($dbh, $idusuario, $tipo, $tipo2, $tipo2a, $tipo3){
+	function skillsTableQuery($dbh, $idusuario, $tipo, $idioma, $skill, $nivel){
+        //Variable de retorno
+        $respuesta='';
         //Formando el query en base a los datos de consulta
-        $queryBase = "SELECT S.tipo, NVL(I.nombre, '') idioma, NVL(T.nombre, '') tecnologia, N.nivel
+        $queryBase = "SELECT S.tipo, NVL(I.nombre, 'N/A') idioma, NVL(T.nombre, 'N/A') tecnologia, N.nivel
                         FROM skills S
                         INNER JOIN niveles N ON S.IDNIVEL = N.IDNIVEL
                         LEFT OUTER JOIN idiomas I ON S.IDIDIOMA = I.IDIDIOMA
@@ -667,14 +681,14 @@
         if($tipo != '0'){
             $queryBase = $queryBase." AND S.tipo = '".$tipo."'";
         }
-        if($tipo2 != 0){
-            $queryBase = $queryBase.' AND I.ididioma = '.$tipo2;
+        if($idioma != '0'){
+            $queryBase = $queryBase." AND I.ididioma = ".$idioma;
         }
-        if($tipo2a != 0){
-            $queryBase = $queryBase.' AND T.idtecnologia = '.$tipo2a;
+        if($skill != '0'){
+            $queryBase = $queryBase." AND T.idtecnologia = ".$skill;
         }
-        if($tipo3 != '0'){
-            $queryBase = $queryBase." AND N.nivel = '".$tipo3."'";
+        if($nivel != '0'){
+            $queryBase = $queryBase." AND N.nivel = '".$nivel."'";
         }
 
         try{
@@ -685,54 +699,48 @@
             //Ejecutando la sentencia
             $sentencia->execute();
             //Obteniendo los datos
-            ?>
-            <table>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Idioma</th>
-                    <th>Tecnología</th>
-                    <th>Nivel</th>
-                    <th>Modificar</th>
-                    <th>Eliminar</th>
-                </tr>
-            <?php
+            $respuesta = '<table><tr>
+                            <th>Tipo</th>
+                            <th>Idioma</th>
+                            <th>Tecnología</th>
+                            <th>Nivel</th>
+                            <th></th>
+                         </tr>';
             //Validando la cantidad de registros devueltos
 			$cuenta = $sentencia->rowCount();
             if ($cuenta > 0){
                 while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<tr>
-				<td><?php echo $vtabla['tipo']?></td>
-				<td><?php echo $vtabla['idioma']?></td>
-				<td><?php echo $vtabla['tecnologia']?></td>
-				<td><?php echo $vtabla['nivel']?></td>
-                <?php
-                    $cadena = 'var1='.$vtabla['tipo'].
-                             '&var2='.$vtabla['idioma'].
-                             '&var3='.$vtabla['tecnologia'].
-                             '&var4='.$vtabla['nivel'];
-                    $vencode = urlencode($cadena);
-                ?>
-                <td><a href="<?php echo 'editSkills.php?'.$cadena;?>">Modificar</a></td>
-                <td><a href="<?php echo 'deleteSkills.php?'.$cadena;?>">Eliminar</a></td>
-                </tr>
-			<?php
-			} //end while 
-            ?>
-            </table>
-            <?php
+                    $respuesta = $respuesta.'
+                                                <tr>
+                                                <td>'.$vtabla['tipo'].'</td>
+                                                <td>'.$vtabla['idioma'].'</td>
+                                                <td>'.$vtabla['tecnologia'].'</td>
+                                                <td>'.$vtabla['nivel'].'</td>
+                                                <td>
+                                                <button class="editarSkills btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-pencil-square"></i> Editar </span></button>
+                                                <button class="eliminarSkills btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-trash"></i> Eliminar </span></button>
+                                                </td>
+                                                </tr>
+                                            ';
+			    } //end while 
+                $respuesta = $respuesta.'</table>';
+                return $respuesta;
             } //End if ($cuenta > 0)
             else {
-                echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
+                $respuesta = 'noResults';
+                return $respuesta;
             }
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox 3'.$e);
+            $respuesta = 'Error al cargar los datos en el combobox 3'.$e;
+            return $respuesta;
         }	
 	}
 
     
 	//Función para llenar el combobox del nivel de las habilidades/idiomas
 	function fillComboBoxEditSkills($dbh, $tipo, $nivel){
+        //Variable de retorno
+        $respuesta='';
 		try{
 			//Preparando la sentencia
 			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM niveles WHERE TIPO = :tipo ORDER BY idnivel");
@@ -742,26 +750,26 @@
             $sentencia->execute();
             //Obteniendo los datos
 			while ($combov3 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<?php
-					if ($combov3['nivel'] == $nivel){
-				?>
-				<option value="<?php echo $combov3['idnivel']?>" selected><?php echo $combov3['nivel']?></option>
-				<?php
+        		if ($combov3['nivel'] == $nivel){
+                        $respuesta = $respuesta.'<option value="'.$combov3['idnivel'].'" selected>'.$combov3['nivel'].'</option>';
+				
 					} else {
-				?>
-				<option value="<?php echo $combov3['idnivel']?>"><?php echo $combov3['nivel']?></option>
-				<?php
+        				$respuesta = $respuesta.'<option value="'.$combov3['idnivel'].'">'.$combov3['nivel'].'</option>';
 				}
 			}
+            //return $respuesta;
+            return $respuesta;
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox 3'.$e);
+            $respuesta = 'Error al cargar los datos en el combobox '.$e;
+            return $respuesta;
         }
 	}
 	
-    //Función para actualizar un skill
+    //Función para saber si el valor a actualizar es el mismo que el actual
 	function UpdateSkill($dbh, $tipo, $skill, $nivel, $idusuario, $idsesion){
-		try{
+		//Variable de retorno
+        $respuesta='';
+        try{
 			//Definiendo el query
             $query = 'UPDATE skills SET idnivel = :nivel WHERE idusuario = :idusuario AND tipo = :tipo';
             if ($tipo == 'Idioma'){
@@ -785,19 +793,64 @@
             //Registrando el movimiento en la bitácora
             movimientos($dbh, $idsesion, 'UPDATE SKILLS');
 			
-            //Redireccionando a la pantalla anterior
-			header("location: ../querySkills.php?error=noneUpdate");
-            
+            //Devolviendo la respuesta
+			$respuesta = 'Actualizado';
+            return $respuesta;
             
 		} catch (PDOException $e){
 			ErrorLog($dbh, $idsesion, 'Error al actualizar skills '.$e, 'ISE_003');
-			header("location: ../querySkills.php?error=errorUpdate");
+			$respuesta = 'Error';
+            return $respuesta;
+		} 
+    }
+
+    //Función para actualizar un skill
+	function validateSkill($dbh, $tipo, $skill, $nivel, $idusuario, $idsesion){
+		//Variable de retorno
+        $respuesta;
+        try{
+			//Definiendo el query
+            $query = 'SELECT * FROM skills WHERE idusuario = :idusuario AND tipo = :tipo AND idnivel = :nivel';
+            if ($tipo == 'Idioma'){
+                $query = $query.' AND ididioma = (SELECT ididioma FROM idiomas WHERE nombre = :skill)';
+            } elseif ($tipo == 'Habilidad') {    
+                $query = $query.' AND idtecnologia = (SELECT idtecnologia FROM tecnologias WHERE nombre = :skill)';
+            }
+
+			//Preparando la sentencia SQL
+			$sentencia = $dbh->prepare($query);
+			//Parámetros
+			$sentencia->bindParam(':nivel', $nivel);
+            $sentencia->bindParam(':idusuario', $idusuario);
+			$sentencia->bindParam(':tipo', $tipo);
+            $sentencia->bindParam(':skill', $skill);
+
+					
+			//Ejecutando la sentencia
+			$sentencia->execute();
+            
+            //Valiando si trae datos la búsqueda
+            $cuenta = $sentencia->rowCount();
+
+            if($cuenta >= 1){
+                return $cuenta;
+            } else {
+                $respuesta = false;
+                return $respuesta;
+            }
+            
+		} catch (PDOException $e){
+			ErrorLog($dbh, $idsesion, 'Error al actualizar skills '.$e, 'ISE_003');
+			$respuesta = false;
+            return $respuesta;
 		} 
 	}
 
     //Función para borrar skills
     function DeleteSkill($dbh, $tipo, $skill, $idusuario, $idsesion){
-            try{
+        //Variable de retorno
+        $respuesta='';    
+        try{
                 //Definiendo el query
                 $query = 'DELETE FROM skills WHERE idusuario = :idusuario AND tipo = :tipo';
                 if ($tipo == 'Idioma'){
@@ -819,36 +872,35 @@
                 //Registrando el movimiento en la bitácora
                 movimientos($dbh, $idsesion, 'DELETE SKILLS');
                 
-                //Redireccionando a la pantalla anterior
-                header("location: ../querySkills.php?error=noneDelete");
+                //Devolviendo la respuesta
+			    $respuesta = 'Eliminado';
+                return $respuesta;
                                 
             } catch (PDOException $e){
                 ErrorLog($dbh, $idsesion, 'Error al borrar skills '.$e, 'ISE_004');
-                header("location: ../querySkills.php?error=errorDelete");
+                //header("location: ../querySkills.php?error=errorDelete");
+                $respuesta = 'Error';
+                return $respuesta;
             } 
     }
 
     //Función para generar la tabla con el listado de usuarios sin rol asignado
 	function queryUserRole($dbh, $idRol){
-        $i = 0;
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT idusuario, NVL(nombre, '') nombre, NVL(apellidos, '') apellidos, NVL(email, '') email, NVL(fecharegistro, '') fecharegistro, NVL(idrol, '') idrol
+			$sentencia = $dbh->prepare("SELECT idusuario, NVL(nombre, 'No especificado') nombre, NVL(apellidos, 'No especificado') apellidos, NVL(email, '') email, NVL(fecharegistro, '') fecharegistro, NVL(idrol, '') idrol
                                         FROM usuarios
                                         WHERE idrol = 4");
             //Ejecutando la sentencia
             $sentencia->execute();
             //Obteniendo los datos
 			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-                $i++;
-                echo '<form name="form'.$i.'" action="includes/addRole.inc.php" method="post">';
 			?>
-				
                 <tr>
-				<td><input type="text" name="fname" placeholder="Nombre" value="<?php echo $vtabla['nombre']?>" readonly></td>
-				<td><input type="text" name="sname" placeholder="Apellido" value="<?php echo $vtabla['apellidos']?>" readonly></td>
-				<td><input type="text" name="email" placeholder="Email" value="<?php echo $vtabla['email']?>" readonly></td>
-                <td><input type="text" name="fecha" placeholder="Fecha de registro" value="<?php echo $vtabla['fecharegistro']?>" readonly></td>
+				<td><?php echo $vtabla['nombre']?></td>
+				<td><?php echo $vtabla['apellidos']?></td>
+				<td><?php echo $vtabla['email']?></td>
+                <td><?php echo $vtabla['fecharegistro']?></td>
                 <td>
                     <select name="idrol" id= "idrol">
                         <?php 
@@ -857,14 +909,13 @@
                         ?>
                     </select>
                 </td>
-                <td><button type="submit" name="submit">Guardar</button></td>
-                <td><input type="hidden" name="idusuario" placeholder="idusuario" value="<?php echo $vtabla['idusuario']?>"></td>
+                <td style="display:none;"><?php echo $vtabla['idusuario']?></td>
+                <td><button class="guardaraddRoleBtn btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-briefcase"></i> Guardar </span></button></td>
 				</tr>
-                </form>
 			<?php
 			}
         }catch (PDOException $e){
-            echo('Error al cargar los datos en el combobox 3'.$e);
+            echo('Error al generar lista de asignación de roles. '.$e);
         }	
 	}
 
@@ -901,6 +952,9 @@
 
     //Función para actualizar el rol del usuario
     function updateRole($dbh, $idusr, $idrol, $idsesion){
+        //Variable de retorno
+        $result;
+
         try{
 			//Definiendo el query
             $query = 'UPDATE usuarios SET idrol = :idrol WHERE idusuario = :idusr';
@@ -915,37 +969,43 @@
 			$sentencia->execute();
             
             //Registrando el movimiento en la bitácora
-            movimientos($dbh, $idsesion, 'UPDATE USUARIOS - IDROL');
+            movimientos($dbh, $idsesion, 'UPDATE USUARIOS - IDROL userid: '.$idusr);
 			
-            //Redireccionando a la pantalla anterior
-			header("location: ../addRole.php?error=none");
+            //Devolviendo la respuesta
+            $result = 'Done';
+			return $result;
             
             
 		} catch (PDOException $e){
 			ErrorLog($dbh, $idsesion, 'Error al actualizar rol del usuario '.$e, 'ISE_005');
-			header("location: ../addRole.php?error=errorUpdate");
+			//Devolviendo la respuesta
+            $result = 'Error';
+			return $result;
 		} 
     } 
 
-    //Función para generar la tabla con el listado de usuarios y los datos generales
+    //Función para generar el listado de usuarios y sus datos generales
 	function queryUsers($dbh, $dato, $idsesion){
+        //Variable de retorno
+        $result;
+
         $dato = '%'.$dato.'%';
 		try{
 			//Preparando la sentencia
 			$sentencia = $dbh->prepare("SELECT NVL(U.idusuario, '') idusuario
-                                             , NVL(U.nombre, '') nombre
-                                             , NVL(U.apellidos, '') apellidos
-                                             , NVL(U.fechanacimiento, '') fechanacimiento
-                                             , NVL(U.telefono, '') telefono
-                                             , NVL(U.telcontacto, '') telcontacto
-                                             , NVL(U.email, '') email
+                                             , NVL(U.nombre, ' No especificado') nombre
+                                             , NVL(U.apellidos, 'No especificado') apellidos
+                                             , NVL(U.fechanacimiento, 'No especificado') fechanacimiento
+                                             , NVL(U.telefono, 'No especificado') telefono
+                                             , NVL(U.telcontacto, 'No especificado') telcontacto
+                                             , NVL(U.email, 'No especificado') email
                                              , NVL(U.idrol, '') idrol
-                                             , NVL(R.nombre, '') rol
-                                             , NVL(U.semestre, '') semestre
-                                             , NVL(U.numeroempleado, '') numeroempleado
-                                             , NVL(U.numeromatricula, '') numeromatricula
+                                             , NVL(R.nombre, 'No especificado') rol
+                                             , NVL(U.semestre, 'No especificado') semestre
+                                             , NVL(U.numeroempleado, 'No especificado') numeroempleado
+                                             , NVL(U.numeromatricula, 'No especificado') numeromatricula
                                              , NVL(U.fecharegistro, '') fecharegistro
-                                             , NVL(U.fechafin, '') fechafin
+                                             , NVL(U.fechafin, '-') fechafin
                                              , NVL(U.bloqueado, 'No') bloqueado
                                         FROM usuarios U
                                         INNER JOIN roles R ON U.idrol = R.idrol
@@ -956,175 +1016,26 @@
             
             //Ejecutando la sentencia
             $sentencia->execute();
+
+            //Valiando la cantidad de registros devueltos
+            $cuenta = $sentencia->rowCount();
+    
+            if($cuenta >= 1){ //Si hay por lo menos una coincidencia
+                $result = $sentencia ;
+            } else {
+                $result = false;
+            }
             
-            //Obteniendo los datos
-			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tr>
-                    <td><?php echo $vtabla['nombre'];?></td>
-                    <td><?php echo $vtabla['apellidos'];?></td>
-                    <td><?php echo $vtabla['fechanacimiento'];?></td>
-                    <td><?php echo $vtabla['telefono'];?></td>
-                    <td><?php echo $vtabla['telcontacto'];?></td>
-                    <td><?php echo $vtabla['email'];?></td>
-                    <td><?php echo $vtabla['rol'];?></td>
-                    <td><?php echo $vtabla['semestre'];?></td>
-                    <td><?php echo $vtabla['numeroempleado'];?></td>
-                    <td><?php echo $vtabla['numeromatricula'];?></td>
-                    <td><?php echo $vtabla['fecharegistro'];?></td>
-                    <td><?php echo $vtabla['fechafin'];?></td>
-                    <td><?php echo $vtabla['bloqueado'];?></td>
-                </tr>
-			<?php
-			}
+            //Devolviendo el resultado
+            return $result;
+
         }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar el listado de usuarios '.$e, 'ISE_006');
-			header("location: ../queryUsers.php?error=statementerror");
+            echo('Error al mostrar el listado de usuarios '.$idsesion.': '.$e);
+            ErrorLog($dbh, $idsesion, 'Error al mostrar el listado de usuarios '.$e, 'ISE_006');
+			//header("location: ../queryUsers.php?error=statementerror");
         }	
 	}
     
-
-    
-    //Función para generar la tabla con los datos de la bitácora de acceso
-	function queryLog($dbh, $dato, $idsesion, $check, $fechaini, $fechafin){
-        //Concatenando el valor de búsqueda para la BD
-        $dato = '%'.$dato.'%';
-        
-        $query = "SELECT NVL(B.idsesion, '') idsesion
-                            , NVL(B.idusuario, '') idusuario
-                            , NVL(U.email, '') usuario
-                            , NVL(B.host, '') host
-                            , NVL(B.fechainicio, '') fechainicio
-                            , NVL(B.fechafin, '') fechafin
-                            , NVL(TIMESTAMPDIFF(second, B.fechainicio, B.fechafin), '') duracion
-                    FROM bitacora B
-                    INNER JOIN usuarios U ON B.idusuario = U.idusuario
-                    WHERE (UPPER(U.email) LIKE UPPER(:dato) OR UPPER(B.host) LIKE UPPER(:dato))";
-        //Ajustando los datos de fechas
-        if ($check == 'no'){
-            $fechaini = NULL;
-            $fechafin = NULL;
-        } else{
-            $fechaini = "'".$fechaini."'";
-            $fechafin = "'".$fechafin."'";
-
-            $query = $query." AND DATE(B.fechainicio) >= NVL(".$fechaini.", B.fechainicio) 
-                              AND DATE(B.fechafin) <= NVL(".$fechafin.", B.fechafin)";
-        }
-
-        $query = $query." ORDER BY B.idsesion";
-
-        try{
-			//Preparando la sentencia
-			$sentencia = $dbh->prepare($query);
-            
-            //Parámetros
-			$sentencia->bindParam(':dato', $dato);
-            
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            
-            //Obteniendo los datos
-			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tr>
-                    <td><?php echo $vtabla['idsesion'];?></td>
-                    <td><?php echo $vtabla['idusuario'];?></td>
-                    <td><?php echo $vtabla['usuario'];?></td>
-                    <td><?php echo $vtabla['host'];?></td>
-                    <td><?php echo $vtabla['fechainicio'];?></td>
-                    <td><?php echo $vtabla['fechafin'];?></td>
-                    <td><?php echo $vtabla['duracion'];?></td>
-                </tr>
-			<?php
-			}
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar los datos de la bitácora '.$e, 'ISE_007');
-			//header("location: ../queryLog.php?error=statementerror");
-        }	
-	}
-
-    //Función para generar la tabla con el listado de usuarios y los datos generales
-	function queryAlumnos($dbh, $name, $sname, $email, $phone, $skill, $nivel, $sid){
-        try{
-			//Preparando la sentencia
-            $sqlQuery = "SELECT SK.idusuario
-            , NVL(US.apellidos, '') apellidos
-            , NVL(US.nombre, '') nombre
-            , NVL(SK.tipo, '') tipo
-            , NVL(ID.nombre, '-') idioma
-            , NVL(TC.nombre, '-') tecnologia
-            , NVL(NV.nivel, '-') nivel
-            , NVL(US.telefono, '-')telefono
-            , NVL(US.telcontacto, '-')telcontacto
-            , NVL(US.email, '')email
-            , NVL(US.semestre, '')semestre
-            FROM skills SK
-            LEFT JOIN usuarios US ON SK.idusuario  = US.idusuario
-            LEFT JOIN idiomas ID ON SK.ididioma = ID.ididioma
-            LEFT JOIN tecnologias TC ON SK.idtecnologia = TC.idtecnologia
-            LEFT JOIN niveles NV ON SK.idnivel = NV.idnivel
-            WHERE US.idrol = 1";
-            
-            if(!empty($name)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.nombre) LIKE UPPER(NVL('%".$name."%',US.nombre))";
-            }
-            if(!empty($sname)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.apellidos) LIKE UPPER(NVL('%".$sname."%', US.apellidos))";
-            }
-            if(!empty($email)){
-                $sqlQuery = $sqlQuery." AND UPPER(US.email) LIKE UPPER(NVL('%".$email."%', US.email))";
-            }
-            if(!empty($phone)){
-                $sqlQuery = $sqlQuery." AND (US.telefono LIKE NVL('%".$phone."%', US.telefono) OR US.telcontacto LIKE NVL('%".$phone."%', US.telcontacto))";
-            }
-            if(!empty($skill)){
-                $sqlQuery = $sqlQuery." AND (UPPER(ID.nombre) LIKE UPPER(NVL('%".$skill."%', ID.nombre)) OR UPPER(TC.nombre) LIKE UPPER(NVL('%".$skill."%', TC.nombre)))";
-            }
-            if(!empty($nivel)){
-                $sqlQuery = $sqlQuery." AND UPPER(NV.nivel) LIKE UPPER(NVL('%".$nivel."%', NV.nivel))";
-            }
-
-
-            $sqlQuery = $sqlQuery." ORDER BY US.apellidos, SK.tipo DESC, NV.idnivel DESC";
-
-            //Preparando la sentencia
-			$sentencia = $dbh->prepare($sqlQuery);
-            
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            
-            //Obteniendo los datos
-			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tr>
-                    <td><?php echo $vtabla['apellidos'];?></td>    
-                    <td><?php echo $vtabla['nombre'];?></td>
-                    <td><?php echo $vtabla['tipo'];?></td>
-                    <td><?php echo $vtabla['idioma'];?></td>
-                    <td><?php echo $vtabla['tecnologia'];?></td>
-                    <td><?php echo $vtabla['nivel'];?></td>
-                    <td><?php echo $vtabla['telefono'];?></td>
-                    <td><?php echo $vtabla['telcontacto'];?></td>
-                    <td><?php echo $vtabla['email'];?></td>
-                    <td><?php echo $vtabla['semestre'];?></td>
-                </tr>
-			<?php
-			}
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'Error al actualizar mostrar el listado de usuarios '.$e, 'ISE_006');
-			header("location: ../queryUsers.php?error=statementerror");
-        }	
-	}
-    
-    
-    //Función para eliminar espacios y caracteres especiales de las cadenas de caracteres
-    function validaEntrada($data) {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
-    }
 
     //Función para guardar el registro de una vacante en la base de datos enterCongress.inc.php
     function RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol){
@@ -1158,155 +1069,6 @@
                 //header($valorLocation);
         } 
     }
-
-    //Función para generar la tabla con el listado de vacantes dependiendo del rol del usuario logueado
-	function vacancyQueryTable($dbh, $idusuario, $idrol, $title, $details, $vflag){
-        //Formando el query en base a los datos de consulta
-        $queryBase = "SELECT NVL(idvacante, '')id
-                           , NVL(titulo, '')titulo
-                           , NVL(detalles, '')detalles
-                           , NVL(fechapublicacion, '')fechapublicacion
-                           , NVL(fechafin, '')fechafin
-                           , NVL(telefono, '')telefono
-                           , NVL(email, '')email
-                           , NVL(idusuario, '')idusuario
-                        FROM vacantes
-                        WHERE 1=1";
-        
-        if($idrol == 1){ //Si el rol es alumno sólo mostrará las vacantes activas y publicadas
-            $queryBase = $queryBase." AND fechapublicacion <= sysdate() AND fechafin >= sysdate()";   
-        }
-        if(!empty($title)){ //Si se indíca el nombre de la vacante 
-            $queryBase = $queryBase." AND UPPER(titulo) LIKE UPPER('%".$title."%')";
-        }
-        if(!empty($details)){ //Si se indíca algúnd detalle de la vacante
-            $queryBase = $queryBase." AND UPPER(detalles) LIKE UPPER('%".$details."%')";
-        }
-        if($vflag == 'Y'){ //Trae las vacantes generadas por el usuario activo
-            $queryBase = $queryBase." AND idusuario = '".$idusuario."'";
-        }
-        
-        
-
-        //echo $queryBase;
-
-        //Cuerpo base del encabezado de la tabla
-        ?>
-            <h2>Listado de vacantes</h2></br>
-            <table>
-            <tr>
-                <th>ID</th>    
-                <th>Titulo</th>
-                <th>Detalles</th>
-                <th>Fecha de publicación</th>
-                <th>Fecha de expiración</th>
-           
-        <?php
-        //Definiendo opciones a mostrar en base al rol
-        switch ($idrol) {
-            case 1: //Alumno
-                ?>
-                        <th>Postularse</th>
-                        </tr>    
-                <?php
-                break;
-            case 2: //Profesor
-                ?>
-                    <th>Teléfono de contacto</th>
-                    <th>Email de contacto</th>
-                    <th>Editar</th>
-                    <th>Eliminar</th>
-                    </tr>    
-                <?php
-                break;
-            case 3: //Administrador
-                ?>
-                    th>Teléfono de contacto</th>
-                    <th>Email de contacto</th>
-                    </tr>    
-                <?php
-                break;
-            default: //Otro
-                ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-                header("location: ../queryVacancy.php?error=statementerror");   
-        }
-
-        try{
-			//Preparando la sentencia
-			$sentencia = $dbh->prepare("$queryBase");
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            //Validando la cantidad de registros devueltos
-			$cuenta = $sentencia->rowCount();
-            if ($cuenta > 0){
-                //Armando la tabla con los datos obtenidos
-                while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-				<tr>
-				<td><?php echo $vtabla['id']?></td>
-				<td><?php echo $vtabla['titulo']?></td>
-				<td><?php echo $vtabla['detalles']?></td>
-				<td><?php echo $vtabla['fechapublicacion']?></td>
-                <td><?php echo $vtabla['fechafin']?></td>
-                <?php
-                    $cadena = 'var1='.$vtabla['id'].
-                              '&var2='.$vtabla['idusuario'].
-                              '&var3='.$idusuario
-                             ;
-                    $vencode = urlencode($cadena);
-                
-                    //Definiendo opciones a mostrar en base al rol
-                    switch ($idrol) {
-                        case 1: //Alumno
-                            if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
-                                    <td><a href="<?php echo 'includes/applyVacancy.inc.php?'.$cadena;?>">Postularse</a></td>
-                                    </tr>    
-                            <?php
-                            }else{
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['telefono']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['email']?></td>
-                                    <td><button class="datos">Mostrar datos</button></td>
-                                    </tr>    
-                            <?php
-                            }
-                            break;
-                        case 2: //Profesor
-                            ?>
-                                <td><?php echo $vtabla['telefono']?></td>
-                                <td><?php echo $vtabla['email']?></td>
-                                <td><a href="<?php echo 'editVacancy.php?'.$cadena;?>">Editar</a></td>
-                                <td><a href="<?php echo 'deleteVacancy.php?'.$cadena;?>">Eliminar</a></td>
-                                </tr>    
-                            <?php
-                            break;
-                        case 3: //Administrador
-                            ?>
-                                <td><?php echo $vtabla['telefono']?></td>
-                                <td><?php echo $vtabla['email']?></td>
-                                </tr>    
-                            <?php
-                            break;
-                        default: //Otro
-                        ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-                        header("location: ../queryVacancy.php?error=statementerror");   
-                    }
-			} //end while 
-            ?>
-            </table>
-            <?php
-            } //End if ($cuenta > 0)
-            else {
-                echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
-            }
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
-            header("location: ../queryVacancy.php?error=statementerror");   
-        }	
-	}
 
     //Funcion para validar que exista la vacante ingresada
     function validateVacancy($dbh, $idVacante, $idcreador){
@@ -1423,179 +1185,6 @@
         } 
     }
 
-    //Función para armar la tabla de resultados de búsqueda de congresos
-    function queryCongressTable($dbh, $cname, $details, $vflag, $actFlag, $idusuario, $idrol){
-
-            //Formando el query en base a los datos de consulta
-            $queryBase = "SELECT NVL(CN.idcongreso, '')id 
-                               , NVL(CN.nombre, '')nombre
-                               , NVL(CN.detalles, '')detalles
-                               , NVL(CN.sede, '')sede
-                               , NVL(CN.fechainicio, '')fechainicio
-                               , NVL(CN.fechafin, '')fechafin
-                               , NVL(CN.titulo, '')titulo
-                               , CASE NVL(PR.idproyecto, '')
-                                    WHEN 1 THEN 'Sin proyecto asociado'
-                                    ELSE NVL(PR.titulo, '')
-                                 END proyectoasociado
-                               , NVL(PR.descripcion, '')descripcion
-                               , NVL(PR.tipo, '')tipo
-                               , NVL(CN.idproyecto, '')idproyecto
-                            FROM congresos CN
-                            LEFT OUTER JOIN proyectos PR ON CN.idproyecto = PR.idproyecto
-                            WHERE 1=1";
-
-            if($idrol == 1){ //Si el rol es alumno sólo mostrará los congresos activos
-            $queryBase = $queryBase." AND CN.fechainicio <= CURDATE() AND CN.fechafin >= CURDATE()";   
-            }
-            if(!empty($cname)){ //Si se indíca el nombre del congreso 
-            $queryBase = $queryBase." AND UPPER(CN.nombre) LIKE UPPER('%".$cname."%')";
-            }
-            if(!empty($details)){ //Si se indíca algún detalle del congreso
-            $queryBase = $queryBase." AND UPPER(CN.detalles) LIKE UPPER('%".$details."%')";
-            }
-            if($vflag == 'Y'){ //Trae los congresos generados por el usuario activo
-            $queryBase = $queryBase." AND CN.creadopor = '".$idusuario."'";
-            }
-            if($actFlag == 'Y'){ //Trae sólo los congresos activos
-                $queryBase = $queryBase." AND CN.fechainicio <= CURDATE() AND CN.fechafin >= CURDATE()";
-            }
-            //return $queryBase;
-
-                    //Cuerpo base del encabezado de la tabla
-        ?>
-        <h2>Listado de congresos</h2></br>
-        <table id="datosCongreso">
-        <thead>
-        <tr>
-            <th>ID</th>    
-            <th>Nombre</th>
-            <th>Detalles</th>
-            <th>Sede</th>
-            <th>Fecha de inicio</th>
-            <th>Fecha de termino</th>
-            <th>Documento a otorgar</th>
-            <th>Proyecto asociado</th>
-            <th>Detalles del proyecto</th>
-       
-        <?php
-        //Definiendo opciones a mostrar en base al rol
-        switch ($idrol) {
-            case 1: //Alumno
-                ?>
-                        <th>Fecha de Asignación</th>
-                        <th>Asignado por</th>
-                        </tr>
-                        </thead>    
-                <?php
-                break;
-            case 2: //Profesor
-                ?>
-                    <th>Asociar Alumno</th>
-                    <th>Editar</th>
-                    <th>Eliminar</th>
-                    </tr>
-                    </thead>    
-                <?php
-                break;
-            default: //Otro
-                ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
-                echo("Este rol no permite la consulta de congresos");   
-        }
-
-        try{
-			//Preparando la sentencia
-			$sentencia = $dbh->prepare("$queryBase");
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            //Validando la cantidad de registros devueltos
-			$cuenta = $sentencia->rowCount();
-            if ($cuenta > 0){
-                //Armando la tabla con los datos obtenidos
-                while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tbody>
-				<tr>
-				<td><?php echo $vtabla['id']?></td>
-				<td><?php echo $vtabla['nombre']?></td>
-				<td><?php echo $vtabla['detalles']?></td>
-                <td><?php echo $vtabla['sede']?></td>
-				<td><?php echo $vtabla['fechainicio']?></td>
-                <td><?php echo $vtabla['fechafin']?></td>
-                <td><?php echo $vtabla['titulo']?></td>
-                <?php //Varia si tiene o no proyecto asignado
-                if($vtabla['proyectoasociado'] =='Sin proyecto asociado') {
-                ?>
-                    <td><?php echo $vtabla['proyectoasociado']?></td>
-                    <td> N/A </td>
-                <?php
-                }else{
-                ?>
-                    <td><?php echo $vtabla['proyectoasociado']?></td>
-                    <td><button name="detalles" class="datos">Detalles</button></td>
-                <?php
-                }
-                ?>
-                
-                <?php
-                    /*
-                    $cadena = 'var1='.$vtabla['id'].
-                              '&var2='.$vtabla['idusuario'].
-                              '&var3='.$idusuario
-                             ;
-                    $vencode = urlencode($cadena);
-                    */
-                    //Definiendo opciones a mostrar en base al rol
-                    switch ($idrol) {
-                        case 1: //Alumno
-                            if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['tipo']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
-                                    <td><button class="asignacion">Ver Asignación</button></td>
-                                    </tr>    
-                            <?php
-                            }else{
-                            ?>
-                                    <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['tipo']?></td>
-                                    <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
-                                    </tr>    
-                            <?php
-                            }
-                            break;
-                        case 2: //Profesor
-                            ?>
-                                <td style="display:none;"><?php echo $vtabla['descripcion']?></td>
-                                <td style="display:none;"><?php echo $vtabla['tipo']?></td>
-                                <td style="display:none;"><?php echo $vtabla['idproyecto']?></td>
-                                <td><button class="asociar">Asociar Alumno</button></td>
-                                <td><button class="editar">Editar</button></td>
-                                <td><button class="eliminar">Eliminar</button></td>
-                                </tr>    
-                            <?php
-                            break;
-                        default: //Otro
-                        ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
-                        echo("Este rol no permite la consulta de congresos");    
-                    }
-			} //end while 
-            ?>
-            </tbody>
-            </table>
-            <?php
-            } //End if ($cuenta > 0)
-            else {
-                echo '<p> La consulta no generó datos. Revise los datos ingresados y vuelva a intentar</p>';
-            }
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
-            echo("Este rol no permite la consulta de congresos Error: " .$e);   
-        }
-    
-    }
-
     //Función para llenar el combobox de tipo de habilidad/conocimiento
     function fillComboBoxCongress($dbh){
         try{
@@ -1646,10 +1235,13 @@
     function addPonente($dbh, $idusr, $idcng, $commts, $idSesionUsuario){
         //Variable para almacenar el resultado
         $result;
+
         try{
         //Preparando la sentencia SQL
         $sentencia = $dbh->prepare("INSERT INTO ponentes (idcongreso, idusuario, asignadopor, comentarios) 
                                                   VALUES (:idcng, :idusr, :idSesionUsuario, :commts);");
+        
+        //Definiendo los parámetros
         $sentencia->bindParam(':idcng', $idcng);
         $sentencia->bindParam(':idusr', $idusr);
         $sentencia->bindParam(':idSesionUsuario', $idSesionUsuario);
@@ -1664,4 +1256,93 @@
             $result = false;
             return $result;
         } 
+    }
+
+    //Función para desbloquear usuarios
+    function unlockUser($dbh, $idsesion, $usr2Unlock){
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("UPDATE usuarios SET bloqueado = NULL, fechafin = NULL WHERE idusuario = :usuario");
+            
+            //Definiendo los parámetros
+            $sentencia->bindParam(':usuario', $usr2Unlock);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'DESBLOQUEAR USUARIO USERID: '.$usr2Unlock);
+
+            //Devolviendo la respuesta
+            return true;
+
+            } catch (PDOException $e){
+                return false;
+                ErrorLog($dbh, $idsesion, 'Error al tratar de desbloquear el usuario '.$usr2Unlock.': '.$e, 'OSE_007');
+            } 
+    }
+
+    //Función para ejecutar queries de consulta
+    function consultaBD($dbh, $idsesion, $sql){
+            //Variable de retorno
+            $result;
+    
+            try{
+                //Preparando la sentencia SQL
+                $sentencia = $dbh->prepare($sql);
+                
+                //Ejecutando la sentencia
+                $sentencia->execute();
+    
+                //Valiando la cantidad de registros devueltos
+                $cuenta = $sentencia->rowCount();
+    
+                if($cuenta >= 1){ //Si hay por lo menos una coincidencia
+                    $result = $sentencia ;
+                } else {
+                    $result = false;
+                }
+                
+                //Devolviendo el resultado
+                return $result;
+
+            }catch (PDOException $e){
+                echo('Error al realizar la búsqueda, sesionID '.$idsesion.': '.$e);
+            }
+        }
+    
+    //Función para restablecer la contraseña
+    function resetPwd($dbh, $idsesion, $pwd, $usrid){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("UPDATE usuarios SET contrasena = :pwd WHERE idusuario=:idusr");
+
+            //Definiendo los parámetros
+            $sentencia->bindParam(':idusr', $usrid);
+
+            //Encriptando la contraseña
+            $hashedPwd = password_hash($pwd, PASSWORD_DEFAULT); 
+            $sentencia->bindParam(':pwd', $hashedPwd);
+
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'RESET PASSWORD USERID: '.$usrid);
+
+            //Devolviendo el resultado
+            $result = true;
+            return $result;
+
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al restablecer la contraseña del usuario '.$usrid.': '.$e, 'OSE_008');
+            
+            //Devolviendo el resultado
+            $result = false;
+            return $result;
+        }
     }

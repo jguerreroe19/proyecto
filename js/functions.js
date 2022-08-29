@@ -13,6 +13,3 @@ function DisableDates(){ //Función para desactivar los campos de fecha en el fo
     document.getElementById("fechaini").disabled = false;
   }
 }
-
-
-
