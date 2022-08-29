@@ -1,7 +1,7 @@
 <?php
     include_once 'header.php';
 ?>
-	<script type='text/javascript' src='js/queryLog.js'></script>
+	<script type='text/javascript' src='js/queryMovimientos.js'></script>
 <?php
     include_once 'header2.php';
 	//Incluyendo archivos externos
@@ -19,12 +19,12 @@
     
 ?>
     
-<section class="queryLog-form">
-    <h2>Consultar Bitácora</h2>
+<section class="queryMov-form">
+    <h2>Consultar Movimientos</h2>
     <div class="container">
-        <form name="qLog" id = "formConsLog" action="#" method="post" class="row g-3">
+        <form name="qLog" id = "formConsMov" action="#" method="post" class="row g-3">
 
-            <label for="Tipo">Buscar por correo electrónico (usuario) o host. Dejar el campo en blanco para traer todos los resultados</label>
+            <label for="Tipo">Buscar por correo electrónico (usuario), host o tipo de movimiento. Dejar el campo en blanco para traer todos los resultados</label>
             </br></br>
             <div class="col-md-6"> 
 				<label for="buscar" class="form-label labelPopUp">Buscar: </label>

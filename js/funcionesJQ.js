@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	
+
 	//Función para cambiar el color de los campos vacios / llenos
 	$.fn.cambiaColorInput = function(elemento, valor){ 
 		//var colorOriginal = elemento.css("border-color");

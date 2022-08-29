@@ -1,5 +1,6 @@
 <?php
     include_once 'header.php';
+    include_once 'header2.php';
 ?>
 <section class="about">
     <h2> Acerca de </h2>

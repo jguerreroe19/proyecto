@@ -1,77 +1,65 @@
 <?php
-    include_once 'header.php';
-	//Incluyendo archivos externos
-	require_once 'includes/dbh.inc.php';
-	require_once 'includes/functions.inc.php';
-	//Valida si hay sesión activa, de lo contrario redirecciona al index.
-	if (isset($_SESSION["sid"])){
+include_once 'header.php';
+?>
+	<script type='text/javascript' src='js/consAlumnos.js'></script>
+<?php
+include_once 'header2.php';
 
-	//Variables de sesión
-	$sid = $_SESSION["sid"];
+//Incluyendo archivos externos
+require_once 'includes/dbh.inc.php';
+require_once 'includes/functions.inc.php';
+	
+//Valida si hay sesión activa, de lo contrario redirecciona al index.
+if (isset($_SESSION["sid"])){
 ?>
     
-<section class="addRole-form">
-<h2>Consultar Alumnos</h2>
-    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-        <p>Ingresar la combinación de valores en los campos según los datos a buscar. Dejar los campos en blanco para traer todos los resultados</p>
-        </br></br>
-        <label for="nombre">Nombre: </label>       
-		<input type="text" name="nombre" id="nombre" placeholder="Nombre"></br></br>
-        <label for="apellidos">Apellidos: </label>       
-		<input type="text" name="apellidos" id="apellidos" placeholder="Apellidos"></br></br>
-        <label for="email">Email: </label>       
-		<input type="text" name="email" id="email" placeholder="Email"></br></br>
-        <label for="telefono">Teléfono: </label>       
-		<input type="text" name="telefono" id="telefono" placeholder="Teléfono"></br></br>
-        <label for="habilidad">Habilidad o Idioma: </label>       
-		<input type="text" name="habilidad" id="habilidad" placeholder="Habilidad o Idioma"></br></br>
-        <label for="nivel">Nivel </label>       
-		<input type="text" name="nivel" id="nivel" placeholder="Nivel"></br></br>
-		<button type="submit" name="submit">Buscar</button>
-    </form>
-	
-	
-		<?php
-        //Mostrando mensajes de error o confirmación
-		if(isset($_GET["error"])){
-				if($_GET["error"] == "statementerror"){
-					echo "<p>Error al ejecutar la consulta. Intente nuevamente o reportelo con el administrador</p>";
-				}
-		}
+<section class="consAlumnos-form">
+	<h2>Consultar Alumnos</h2>
+	<div class="container">
+		<form name="qAlumnos" id = "formConsAlumnos" action="#" method="post" class="row g-3">
+			<p>Ingresar la combinación de valores en los campos según los datos a buscar. </br>Dejar los campos en blanco para traer todos los resultados</p>
+			</br></br>
+			<div class="col-md-6"> 
+				<label for="nombre" class="form-label labelPopUp">Nombre: </label>       
+				<input type="text" name="nombre" id="nombre" class="form-control" placeholder="Buscar nombre">
+			</div>
+			<div class="col-md-6"> 
+				<label for="apellidos" class="form-label labelPopUp">Apellidos: </label>       
+				<input type="text" name="apellidos" id="apellidos" class="form-control" placeholder="Buscar apellidos">
+			</div>
+			<div class="col-md-6"> 
+				<label for="email" class="form-label labelPopUp">Email: </label>       
+				<input type="text" name="email" id="email" class="form-control" placeholder="Buscar email">
+			</div>
+			<div class="col-md-6"> 
+				<label for="telefono" class="form-label labelPopUp">Teléfono: </label>       
+				<input type="text" name="telefono" id="telefono" class="form-control" placeholder="Buscar teléfono">
+			</div>
+			<div class="col-md-6"> 
+				<label for="habilidad" class="form-label labelPopUp">Habilidad o Idioma: </label>       
+				<input type="text" name="habilidad" id="habilidad" class="form-control" placeholder="Buscar habilidad o idioma">
+			</div>
+			<div class="col-md-6"> 
+				<label for="nivel" class="form-label labelPopUp">Nivel </label>       
+				<input type="text" name="nivel" id="nivel" class="form-control" placeholder="Buscar nivel">
+			</div>
+			<div class="col-12">
+				<input type="hidden" name="idrol" id="idrol" value="<?php echo $_SESSION["idrol"];?>">	
+				<input type="hidden" name="idsesion" id="idsesion" value="<?php echo $_SESSION["sid"];?>">
+				<!--<button type="submit" name="submit">Buscar</button>-->
+				<input type="button" value="Buscar" id="btnBuscar" class="buttonEnviar">
+				<input type="button" value="Limpiar campos" id="limpiaCampos" class="buttonEnviar limpiaCampos">
+			</div>
 
-        if(isset($_POST["submit"])){
-            //Obtiene los datos del formulario
-            $name = validaEntrada($_POST["nombre"]);
-            $sname = validaEntrada($_POST["apellidos"]);
-            $email = validaEntrada($_POST["email"]);
-            $phone = validaEntrada($_POST["telefono"]);
-            $skill = validaEntrada($_POST["habilidad"]);
-            $nivel = validaEntrada($_POST["nivel"]);
-			?>    
-			<h2>Listado de usuarios</h2>
-			<table>
-			<tr>
-                <th>Apellidos</th>
-                <th>Nombre</th>
-			    <th>Tipo de conocimiento</th>
-                <th>Idioma</th>
-                <th>Tecnología</th>
-                <th>Nivel</th>
-			    <th>Teléfono</th>
-			    <th>Teléfono de contacto</th>
-			    <th>Email</th>
-			    <th>Semestre</th>
-			</tr>
-			<?php
-			queryAlumnos($dbh, $name, $sname, $email, $phone, $skill, $nivel, $sid);
-			?>	
-		  </table>
-		  <br><br>
-		  <br><br>
-		  <?php
-        }
-		?>
+		</form>
+	</div>
+	</br>
+	<!--Muestra la respuesta que se recibe de Ajax-->
+	<div id="mensajes" class="col-md-12 collapse hide" style="background-color: #d3d3d4; padding:0.5rem; font-size: 19px;"></div>
+	<!--Muestra la respuesta que se recibe de Ajax-->
+	<div id="tablaResultados" class="col-md-12 collapse hide"></div>
 </section>
+
 <?php
 }else{
     //Redirecciona al index si no hay sesión activa

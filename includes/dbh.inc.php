@@ -1,10 +1,10 @@
 <?php
     /*Datos de conexión*/
     
-    $serverName="sql212.epizy.com";
-    $dBUsername="epiz_31704310";
-    $dBPassword="BbpJVwozyH1Z";
-    $dBName="epiz_31704310_ici";
+    $serverName="localhost";
+    $dBUsername="jjge";
+    $dBPassword="guerrero2021";
+    $dBName="ICI";
 
     /*$serverName="localhost";
     $dBUsername="id16975702_dbadmin";
