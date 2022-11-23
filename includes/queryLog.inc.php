@@ -22,21 +22,16 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         //Concatenando el valor de búsqueda para la BD
         $dato = '%'.$dato.'%';        
         
-        $query = "SELECT NVL(MV.idmovimiento, '') idmovimiento
-                        , NVL(BT.idsesion, '') idsesion
-                        , NVL(US.idusuario, '') idusuario
-                        , NVL(MV.fechamovimeinto, '') fechamovimeinto
-                        , NVL(MV.tipomovimiento, '') tipomovimiento
-                        , NVL(BT.fechainicio, '') iniciosesion
-                        , NVL(BT.fechafin, '') finsesion
-                        , NVL(BT.host, '') host
-                        , NVL(US.email, '') email
-                        FROM movimientos MV
-                        LEFT OUTER JOIN bitacora BT ON MV.idsesion = BT.idsesion
-                        LEFT OUTER JOIN usuarios US ON BT.idusuario = US.idusuario
-                WHERE (UPPER(US.email) LIKE UPPER('".$dato."') 
-                    OR UPPER(BT.host) LIKE UPPER('".$dato."')
-                    OR UPPER(MV.tipomovimiento) LIKE UPPER('".$dato."'))";
+        $query = "SELECT NVL(B.idsesion, '') idsesion
+                            , NVL(B.idusuario, '') idusuario
+                            , NVL(U.email, '') usuario
+                            , NVL(B.host, '') host
+                            , NVL(B.fechainicio, '') fechainicio
+                            , NVL(B.fechafin, '') fechafin
+                            , NVL(TIMESTAMPDIFF(second, B.fechainicio, B.fechafin), '') duracion
+                    FROM bitacora B
+                    INNER JOIN usuarios U ON B.idusuario = U.idusuario
+                    WHERE (UPPER(U.email) LIKE UPPER('".$dato."') OR UPPER(B.host) LIKE UPPER('".$dato."'))";
         
         //Ajustando los datos de fechas
         if ($check == 'true'){
@@ -44,39 +39,35 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                 echo 'wrongDateRange';
                 exit();
             }else{
-                $query = $query." AND DATE(MV.fechamovimeinto) >= '".$fechaini."' AND DATE(MV.fechamovimeinto) <= '".$fechafin."'";
+                $query = $query." AND DATE(B.fechainicio) >= '".$fechaini."' AND DATE(B.fechafin) <= '".$fechafin."'";
             }
             
         }
 
-        $query = $query." ORDER BY MV.fechamovimeinto DESC;";
+        $query = $query." ORDER BY B.idsesion";
         
         //Llamando a la función para generar la consulta
         $respuesta = consultaBD($dbh, $idsesion, $query);
         if ($respuesta != false){
-            $result = '<table id="logTable" class="table-responsive"><thead><tr>
-                            <th>ID Movimiento</th>                
+            $result = '<table id="logTable" class="row-border compact stripe hover"><thead><tr>
                             <th>ID Sesión</th>
                             <th>ID Usuario</th>
-                            <th>Fecha del movimiento</th>
-                            <th>Tipo de movimiento</th>
-                            <th>Inicio de sesión</th>
-                            <th>Fin de sesión</th>
+                            <th>Usuario</th>
                             <th>Host</th>
-                            <th>Email</th>
+                            <th>Fecha de inicio</th>
+                            <th>Fecha de fin</th>
+                            <th>Duración en segundos</th>
                             </tr></thead><tbody>';
         
             while ($vtabla = $respuesta->fetch(PDO::FETCH_ASSOC)) {
                 $result = $result.'<tr>
-                                   <td>'.$vtabla['idmovimiento'].'</td>
                                    <td>'.$vtabla['idsesion'].'</td>
                                    <td>'.$vtabla['idusuario'].'</td>
-                                   <td>'.$vtabla['fechamovimeinto'].'</td>
-                                   <td>'.$vtabla['tipomovimiento'].'</td>
-                                   <td>'.$vtabla['iniciosesion'].'</td>
-                                   <td>'.$vtabla['finsesion'].'</td>
+                                   <td>'.$vtabla['usuario'].'</td>
                                    <td>'.$vtabla['host'].'</td>
-                                   <td>'.$vtabla['email'].'</td>
+                                   <td>'.$vtabla['fechainicio'].'</td>
+                                   <td>'.$vtabla['fechafin'].'</td>
+                                   <td>'.$vtabla['duracion'].'</td>
                                    </tr>';
             }
             $result = $result.'</tbody></table>';
@@ -92,6 +83,53 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         echo 'invalidRole';
         exit();
     }
+    
+   /*
+        //Mostrando mensajes de error o confirmación
+		if(isset($_GET["error"])){
+				if($_GET["error"] == "statementerror"){
+					echo "<p>Error al ejecutar la consulta. Intente nuevamente o reportelo con el administrador</p>";
+				}
+		}
+
+        if(isset($_POST["submit"])){
+            //Obtiene los datos del formulario
+            $dato = $_POST["buscar"];
+            
+            //Si el check está marcado
+            if (isset($_POST['cfechas'])){
+                $check = $_POST["cfechas"];
+                $fechaini = $_POST["fechaini"];
+                $fechafin = $_POST["fechafin"];
+                
+
+            } else {
+                $check = 'no';
+                $fechaini = '0';
+                $fechafin = '0';
+            }
+
+			?>    
+			<h2>Bitácora de accesos</h2>
+			<table>
+			<tr>
+			  <th>ID Sesión</th>
+			  <th>ID Usuario</th>
+			  <th>Usuario</th>
+			  <th>Host</th>
+			  <th>Fecha de inicio</th>
+			  <th>Fecha de fin</th>
+			  <th>Duración en segundos</th>
+			</tr>
+			<?php
+			queryLog($dbh, $dato, $sid, $check, $fechaini, $fechafin);
+			?>	
+		  </table>
+		  <br><br>
+		  <br><br>
+		  <?php
+        }
+    */
 
 } else{
     //Regresa a la página inicial

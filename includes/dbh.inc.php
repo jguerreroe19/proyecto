@@ -7,15 +7,17 @@
     $dBName="ICI";
 
     /*$serverName="localhost";
-    $dBUsername="id16975702_dbadmin";
+    $dBUsername="u649030186_dbuser";
     $dBPassword="uaa2022ICI#999";
-    $dBName="id16975702_ici";
+    $dBName="u649030186_proyecto";
     */
 
 /*Conexión a la BD*/
 try{
     $dbh = new PDO("mysql:host=$serverName;dbname=$dBName", $dBUsername, $dBPassword);
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    //echo "éxito";
 
 } catch (PDOException $e) {
     //echo "Error: " . $e->getMessage();

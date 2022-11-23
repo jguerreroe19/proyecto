@@ -1,10 +1,12 @@
 <?php
     include_once 'header.php';
+?>
+    <script type='text/javascript' src='js/signup.js'></script>
+<?php
     include_once 'header2.php';
 ?>
 
-<section class="signup-form">
-    <h2> Registro de usuarios nuevos</h2>
+<section class="signup-form debajodelNav">
     </br></br>
     <div class="form-holder d-flex align-items-baseline">
     <form action="includes/signup.inc.php" method="post" id="formSignUp" class="row g-3 needs-validation" novalidate>
@@ -45,86 +47,6 @@
     </form>
     </div>
 </section>
-
-
-
-<script>
-		$('#btnRegistrar').click(function(){  
-
-        var valorCorreo = $('#email').val(); //Obtiene el valor del correo
-		var resultado  = $.fn.validaEmail(valorCorreo); //Obtiene el rasultado de la validación del correo
-		
-		//alert('RESULTADO validación correo: ' + resultado);
-		
-		//Validación de la estructura de la contraseña
-		var valorPwd = $('#pwd').val(); //Obtiene el valor de la contraseña
-		resultado = resultado + $.fn.validaPwd(valorPwd); //Obtiene el resultado de la validación
-		
-		//alert('RESULTADO validación contraseña: ' + resultado);
-				
-		//Validación de password y confirmación iguales
-		resultado = resultado + $.fn.validaPwdRpt();
-		
-		//alert('RESULTADO validación passwords: ' + resultado);
-		
-		//Validación de campos vacios
-		var form = $(this).parents("#formSignUp");
-		resultado = resultado + $.fn.checkCampos(form);
-
-		
-		//alert('RESULTADO validación final: ' + resultado);
-		
-		
-		//Valida que los campos cumplan con todas las características para poder enviar el formulario
-		//alert('Valor del resultado: ' + resultado);
-		if (resultado == 4) {
-			//$('#formSignUp')[0].submit(); //Submit Form
-		
-			
-			var vName = $('#name').val();
-			var vSname = $('#sname').val();
-			var vCorreo = $('#email').val();
-            var vPwd = $('#pwd').val();
-			var vPwdrepeat = $('#pwdrepeat').val();
-			
-			var ruta = "name="+vName
-                      +"&sname="+vSname
-                      +"&email="+vCorreo
-                      +"&pwd="+vPwd
-                      +"&pwdrepeat="+vPwdrepeat;
-			
-			$.ajax({
-				url: 'includes/signup.inc.php',
-				type: 'POST',
-				data: ruta,
-			})
-			.done(function(res){
-				$('#respuesta').html(res)
-			})
-			.fail(function(){
-				console.log("Fallo");
-			})
-			.always(function(){
-				console.log("Complete");
-			});
-
-        }
-            
-		});
-        
-        //Validar sólo letras en el campo de nombre
-        $("#name").on('input', function (evt) {
-		    // Permite sólo letras
-            this.value = (this.value + '').replace(/[^a-zA-Z ]/g, '');
-	    });
-
-        //Validar sólo letras en el campo de Apellidos
-        $("#sname").on('input', function (evt) {
-		    // Permite sólo letras
-            this.value = (this.value + '').replace(/[^a-zA-Z ]/g, '');
-	    });
-
-	</script>
 
 <?php
     include_once 'footer.php';

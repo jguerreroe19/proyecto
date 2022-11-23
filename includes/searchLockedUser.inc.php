@@ -16,8 +16,8 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
             , NVL(US.apellidos, '') apellidos
             , NVL(US.email, '') email
             , RL.nombre rol
-            , NVL(US.bloqueado, 'Y') bloqueado
-            , NVL(US.fechafin, 'N/A')fechafin
+            , NVL(US.bloqueado, 'N') bloqueado
+            , NVL(US.fechafin, 'N/E')fechafin
             FROM usuarios US
             LEFT OUTER JOIN roles RL ON RL.idrol = US.idrol
             WHERE UPPER(email) LIKE UPPER('%".$usuario."%') 
@@ -31,7 +31,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
 
         if ($respuesta != false){
             //Formando la tabla de resultados
-            $result = '<table id="usrLockedTable" class="table-responsive"><thead><tr>
+            $result = '<table id="usrLockedTable" class="row-border compact stripe hover"><thead><tr>
                         <th>ID usuario</th>    
                         <th>Nombre</th>
                         <th>Apellidos</th>

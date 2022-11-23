@@ -32,28 +32,6 @@
         return $result;
     }
 
-    //Función para validar vampos vacios en la forma de captura de vacantes
-    function emptyInputVacancy($title, $details, $pdate, $edate, $phone, $email) {
-        $result;
-        if(empty($title) || empty($details) || empty($pdate) || empty($edate) || empty($phone) || empty($email)){
-            $result = true;
-        } else {
-            $result = false;
-        }
-        return $result;
-    }
-
-    //Función para validar vampos vacios en la forma de captura de congresos
-    function emptyInputCongress($cname, $details, $sede, $finicio, $ffin, $reco) {
-        $result;
-        if(empty($cname) || empty($details) || empty($sede) || empty($finicio) || empty($ffin) || empty($reco)){
-            $result = true;
-        } else {
-            $result = false;
-        }
-        return $result;
-    }
-
     //Función para validar que las contraseñas ingresadas coincidan
     function pwdMatch($pwd, $pwdRepeat){
         $result;
@@ -90,15 +68,39 @@
         }
     }
 
+    //Función para validar si la habilidad ya está asignada al usuario
+    function skillExist($dbh, $query){
+        //Variable para almacenar el resultado
+        $result;
+        //Preparando la sentencia SQL
+        $sentencia = $dbh->prepare($query);
+        
+        //Ejecutando la sentencia
+        $sentencia->execute();
+         
+        //Valiando si trae datos la búsqueda
+        $cuenta = $sentencia->rowCount();
+            
+        if($cuenta >= 1){
+            return $cuenta;
+        } else {
+            $result = false;
+            return $result;
+        }
+    }
+
     //Función para validar si existe la vancante capturada dentro de la base de datos
     function vacancyExist($dbh, $title, $details){
         //Variable para almacenar el resultado
         $result;
+
         //Preparando la sentencia SQL
         $sentencia = $dbh->prepare("SELECT * FROM vacantes WHERE titulo = :title OR detalles = :details");
+        
         //Definiendo los parámetros
         $sentencia->bindParam(':title', $title);
         $sentencia->bindParam(':details', $details);
+        
         //Ejecutando la sentencia
         $sentencia->execute();
                  
@@ -114,14 +116,13 @@
     }
 
     //Función para validar si existe el congreso capturada dentro de la base de datos
-    function congressExist($dbh, $cname, $details){
+    function congressExist($dbh, $cname){
         //Variable para almacenar el resultado
         $result;
         //Preparando la sentencia SQL
-        $sentencia = $dbh->prepare("SELECT * FROM congresos WHERE nombre = :cname OR detalles = :details");
+        $sentencia = $dbh->prepare("SELECT * FROM congresos WHERE nombre = :cname");
         //Definiendo los parámetros
         $sentencia->bindParam(':cname', $cname);
-        $sentencia->bindParam(':details', $details);
         //Ejecutando la sentencia
         $sentencia->execute();
                  
@@ -211,87 +212,99 @@
 
     //Función para realizar el proceso de login
     function loginUser($dbh, $email, $pwd){
-        //Variable para regresar la información 
+        //Variable de retorno
         $respuesta;
         //Preparando la sentencia SQL
         /*
             La sentencia valida que el usuario no esté inactivo (fechafin) o que esté bloqueado, de ser así ya no traerá datos.
             Por lo tanto no se logrará establecer el login 
         */
-        try{
-            $sentencia = $dbh->prepare("SELECT U.*, R.nombre nombrerol FROM usuarios U, roles R 
-                        WHERE U.idrol = R.idrol 
-                        AND (U.fechafin < current_date() OR U.fechafin IS NULL) 
-                        AND (U.bloqueado <> 'Y' OR U.bloqueado  IS NULL)
-                        AND U.email = :email");
-            $sentencia->bindParam(':email', $email);
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            //Obteniendo los datos
-            $usuarios = $sentencia->fetch(PDO::FETCH_ASSOC);
+        //Valida si existe el usuario
+        $existe = uidExist($dbh, $email);
+        if ($existe != false){
+            try{
+                $sentencia = $dbh->prepare("SELECT U.*, R.nombre nombrerol FROM usuarios U, roles R 
+                            WHERE U.idrol = R.idrol 
+                            AND (U.fechafin < current_date() OR U.fechafin IS NULL) 
+                            AND (U.bloqueado <> 'Y' OR U.bloqueado  IS NULL)
+                            AND U.email = :email");
+                $sentencia->bindParam(':email', $email);
+                //Ejecutando la sentencia
+                $sentencia->execute();
+                //Obteniendo los datos
+                $usuarios = $sentencia->fetch(PDO::FETCH_ASSOC);
 
-            //Obteniendo la contraseña guardada en la base de datos
-            $hashedPwd = $usuarios["CONTRASENA"];
-            $checkPwd = password_verify($pwd, $hashedPwd);
+                //Obteniendo la contraseña guardada en la base de datos
+                $hashedPwd = $usuarios["CONTRASENA"];
+                $checkPwd = password_verify($pwd, $hashedPwd);
 
-            //Si la contraseña ingresada conincide con la almacenada en la BD
-            if($checkPwd === true){
-                //Generando el registro de sesión en la BD
-                if (CreateSessionID($dbh,$usuarios["IDUSUARIO"], getIPAddress())){
+                //Si la contraseña ingresada conincide con la almacenada en la BD
+                if($checkPwd === true){
+                    $ip = getIPAddress();
+                    //Generando el registro de sesión en la BD
+                    if (CreateSessionID($dbh,$usuarios["IDUSUARIO"], $ip)){
 
-                    //Obteniendo el número de sesión para inicializarlo en PHP
-                    $sid = GetSessionID($dbh,$usuarios["IDUSUARIO"]);
-                    if ($sid > 0) {
-                        session_id($sid);
-                        session_set_cookie_params(0);
-                        session_start();
-                        //Variables para gestionar el tiempo de inactividad
-                        $_SESSION['logged_in'] = true; //Define que la sesión está activa
-                        $_SESSION['last_activity'] = time(); //Establece la hora en la que se inició la sesión (o la última actividad)
-                        
-                        //Llama a la función para obtener el valor del parámetro actual de duración de la sesión
-                        $tiempoSesion = obtieneParametro($dbh, 'expiracion');
-                        $_SESSION['expire_time'] = $tiempoSesion; //Tiempo de expiración en segundos
+                        //Obteniendo el número de sesión para inicializarlo en PHP
+                        $sid = GetSessionID($dbh,$usuarios["IDUSUARIO"]);
+                        if ($sid > 0) {
+                            session_id($sid);
+                            session_set_cookie_params(0);
+                            session_start();
+                            //Variables para gestionar el tiempo de inactividad
+                            $_SESSION['logged_in'] = true; //Define que la sesión está activa
+                            $_SESSION['last_activity'] = time(); //Establece la hora en la que se inició la sesión (o la última actividad)
+                            
+                            //Llama a la función para obtener el valor del parámetro actual de duración de la sesión
+                            $tiempoSesion = obtieneParametro($dbh, 'expiracion');
+                            $_SESSION['expire_time'] = $tiempoSesion; //Tiempo de expiración en segundos
 
-                        //Variables globales de la sesión actual
-                        $_SESSION["userid"] = $usuarios["EMAIL"];
-                        $_SESSION["usernombre"] = $usuarios["NOMBRE"];
-                        $_SESSION["typeRol"] = $usuarios["nombrerol"];
-                        $_SESSION["idrol"] = $usuarios["IDROL"];
-                        $_SESSION["idusuario"] = $usuarios["IDUSUARIO"];
-                        $_SESSION["sid"] = $sid;
-                        header("location: ../index.php");
-                        exit();
+                            //Variables globales de la sesión actual
+                            $_SESSION["userid"] = $usuarios["EMAIL"];
+                            $_SESSION["usernombre"] = $usuarios["NOMBRE"];
+                            $_SESSION["typeRol"] = $usuarios["nombrerol"];
+                            $_SESSION["idrol"] = $usuarios["IDROL"];
+                            $_SESSION["idusuario"] = $usuarios["IDUSUARIO"];
+                            $_SESSION["sid"] = $sid;
+                            //echo 'success';
+                            header("location: ../index.php");
+                            exit();
+                        } else {
+                            ErrorLog($dbh, $idsesion, 'No se pudieron obtener los detalles de la sesión', 'OSE_001');
+                            //$respuesta = 'Error OSE_001: No se pudieron obtener los detalles de la sesión';
+                            //return $respuesta;
+                            //echo 'error';
+                            header("location: ../?error=OSE_001");
+                            exit();
+                        }
                     } else {
-                        ErrorLog($dbh, $idsesion, 'No se pudieron obtener los detalles de la sesión', 'OSE_001');
-                        //$respuesta = 'Error OSE_001: No se pudieron obtener los detalles de la sesión';
+                        ErrorLog($dbh, $idsesion, 'No fue posible generar la sesión', 'OSE_002');
+                        //$respuesta = 'Error OSE_002: No fue posible generar la sesión';
                         //return $respuesta;
-                        header("location: ../?error=OSE_001");
+                        header("location: ../?error=OSE_002");
+                        //echo 'error';
                         exit();
+                        
                     }
-                } else {
-                    ErrorLog($dbh, $idsesion, 'No fue posible generar la sesión', 'OSE_002');
-                    //$respuesta = 'Error OSE_002: No fue posible generar la sesión';
+                } else if($checkPwd === false) {
+                    //$respuesta = 'Datos de acceso incorrectos';
                     //return $respuesta;
-                    header("location: ../?error=OSE_002");
+                    header("location: ../index.php?error=wronglogin");
+                    //echo 'wronglogin';
                     exit();
-                    
                 }
-            } else if($checkPwd === false) {
-                //$respuesta = 'Datos de acceso incorrectos';
-                //return $respuesta;
-                header("location: ../index.php?error=wronglogin");
-                exit();
+            }catch (PDOException $e){
+                ErrorLog($dbh, $idsesion, 'Error en el proceso de login '.$e, 'OSE_005');
             }
-        }catch (PDOException $e){
-            ErrorLog($dbh, $idsesion, 'Error en el proceso de login '.$e, 'OSE_005');
+        }else{
+            //echo 'wronglogin';
+            header("location: ../index.php?error=wronglogin");
+            exit();
         }
-
     }
 
     //Función para obtener el valor de los parámetros de configuración
     function obtieneParametro($dbh, $parametro){
-        $parametro = 'expiracion';
+        //$parametro = 'expiracion';
         //Preparando la sentencia SQL
         try{
         $sentencia = $dbh->prepare("SELECT valor FROM configuracion WHERE parametro = :param");
@@ -306,6 +319,30 @@
         } catch (PDOException $e){
             $valor = null;
             return $valor;
+        } 
+    }
+
+    //Función para obtener el valor de los parámetros de configuración
+    function actualizaParametro($dbh, $parametro, $valor, $idsesion){
+        //Preparando la sentencia SQL
+        try{
+            $sentencia = $dbh->prepare("UPDATE configuracion SET valor = :val WHERE parametro = :param");
+            
+            //Definiendo parámetros
+            $sentencia->bindParam(':val', $valor);
+            $sentencia->bindParam(':param', $parametro);
+    
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            
+            //Registrando el movimiento en la BD
+            movimientos($dbh, $idsesion, 'UPDATE CONFIGURACION - Parámetro: '.$parametro.' / Valor: '.$valor);
+
+            //Devolviendo el valor
+            return 'done';
+
+        } catch (PDOException $e){
+                return 'Error: '.$e;
         } 
     }
 
@@ -375,6 +412,7 @@
         $sentencia->execute();
         $confirm = true;
         return $confirm;
+        
         } catch (PDOException $e){
             $confirm = false;
             return $confirm;
@@ -425,15 +463,15 @@
     function ErrorLog($dbh, $idsesion, $msg, $code){
         //Preparando la sentencia SQL
         try{
-            $sentencia = $dbh->prepare("INSERT INTO logerrores(idsesion, mensaje, código) VALUES (NVL(:sesid,1), :msg, :code)");
+            $sentencia = $dbh->prepare("INSERT INTO logerrores(idsesion, mensaje, código) VALUES (:sesid, :msg, :code)");
             $sentencia->bindParam(':sesid', $idsesion);
             $sentencia->bindParam(':msg', $msg);
             $sentencia->bindParam(':code', $code);
             //Ejecutando la sentencia
             $sentencia->execute();
-            return $sesid;
+            return 'OK';
             } catch (PDOException $e){
-                return $e;
+                return 'Error: '.$e;
             } 
     }
 
@@ -467,6 +505,7 @@
          return $ip;  
     }  
 
+    /*
     //Función para llenar el combobox de tipo de habilidad/conocimiento
     function fillComboBox($dbh){
         try{
@@ -485,20 +524,22 @@
         }
 
     }
-	
+	*/
+/*
 	//Función para llenar el combobox de habilidades/idiomas
     function fillComboBox2($dbh, $opcion, $idusuario){
         //Variable para regresar la información 
         $respuesta='';
+        $users_arr = array();
 
 		if ($opcion == 'Idioma'){
 			$query = ("SELECT I.ididioma id, I.nombre
-						FROM IDIOMAS I
-						WHERE NOT EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
+						FROM idiomas I
+						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
 		} elseif ($opcion == 'Habilidad'){
 			$query = ("SELECT T.idtecnologia id, T.nombre
-						FROM TECNOLOGIAS T
-						WHERE NOT EXISTS (SELECT * FROM SKILLS S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
+						FROM tecnologias T
+						WHERE NOT EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
 		}
 		try{
 			//Preparando la sentencia
@@ -510,8 +551,14 @@
 			//Validando la cantidad de registros devueltos
 			$cuenta = $sentencia->rowCount();
 			if ($cuenta>0){
-				while ($combov2 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-					$respuesta = ($respuesta.'<option value="'.$combov2['id'].'">'.$combov2['nombre'].'</option>');
+				//$combov2 = $sentencia->fetchAll(PDO::FETCH_ASSOC);
+                while ($combov2 = $sentencia->fetch(PDO::FETCH_ASSOC)) {
+					$id = $combov2['id'];
+                    $name = $combov2['nombre'];
+                    //$respuesta = ($respuesta.'<option value="'.$combov2['id'].'">'.$combov2['nombre'].'</option>');
+                    //Codificando en formato Json los resultados
+                    //$respuesta = json_encode($combov2);
+                    $users_arr[] = array("id" => $id, "name" => $name);
 				}
 			} else {
 				if ($opcion == 'Idioma'){
@@ -535,7 +582,7 @@
         $respuesta='';
 		try{
 			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM NIVELES WHERE TIPO = :opcion ORDER BY idnivel");
+			$sentencia = $dbh->prepare("SELECT idnivel, nivel FROM niveles WHERE TIPO = :opcion ORDER BY idnivel");
 			//Parámetros
 			$sentencia->bindParam(':opcion', $opcion);
             //Ejecutando la sentencia
@@ -551,16 +598,15 @@
 			return $respuesta;
         }
 	}
-	
 	//Finción para registrar un skill en la base de datos
 	function RecordSkill($dbh, $tipo2, $tipo3, $idusuario, $tipo){
 		//Variable para regresar la información 
         $respuesta='';
 		try{
 			if ($tipo == 'Idioma'){
-				$query = "INSERT INTO SKILLS (idusuario, creadopor, ididioma, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
+				$query = "INSERT INTO skills (idusuario, creadopor, ididioma, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
 			} elseif ($tipo == 'Habilidad') {
-				$query = "INSERT INTO SKILLS (idusuario, creadopor, idtecnologia, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
+				$query = "INSERT INTO skills (idusuario, creadopor, idtecnologia, idnivel, tipo) VALUES (:idusuario, :idcreadopor, :idtecnologia, :idnivel, :tipo)";
 			}
 			
 			//Preparando la sentencia SQL
@@ -577,16 +623,14 @@
 			$respuesta = 'success';
 			return $respuesta;
 			
-			//header("location: ../index.php?error=none"); /**************************************REVISAR LA URL DE REDIRECCIÓN*/
+			//header("location: ../index.php?error=none"); 
 		} catch (PDOException $e){
 			$respuesta = '<p>Error al tratar de guardar la habilidad. '.$e.'</p>';
 			return $respuesta;
-			/******************************************************************************* IMPRIMIR ERROR */
-			/*$vencode = urlencode($e->getMessage());
-			$valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
-			header($valorLocation);*/
+			
 		} 
-	}
+	}*/
+  
 	//Función para generar la tabla con el listado de habilidades y conocimientos
 	function skillsTable($dbh, $idusuario){
 		//Variable para regresar la información 
@@ -594,10 +638,10 @@
 		try{
 			//Preparando la sentencia
 			$sentencia = $dbh->prepare("SELECT S.tipo, NVL(I.nombre, '') idioma, NVL(T.nombre, '') tecnologia, N.nivel
-										FROM SKILLS S
-										INNER JOIN NIVELES N ON S.IDNIVEL = N.IDNIVEL
-										LEFT OUTER JOIN IDIOMAS I ON S.IDIDIOMA = I.IDIDIOMA
-										LEFT OUTER JOIN TECNOLOGIAS T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
+										FROM skills S
+										INNER JOIN niveles N ON S.IDNIVEL = N.IDNIVEL
+										LEFT OUTER JOIN idiomas I ON S.IDIDIOMA = I.IDIDIOMA
+										LEFT OUTER JOIN tecnologias T ON S.IDTECNOLOGIA = T.IDTECNOLOGIA
 										WHERE S.idusuario = :idusuario
 										ORDER BY S.tipo");
 			//Parámetros
@@ -624,7 +668,7 @@
                             WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND I.IDIDIOMA = S.IDIDIOMA)");
         } elseif ($opcion == 'Habilidad'){
                 $query = ("SELECT T.idtecnologia id, T.nombre
-                            FROM TECNOLOGIAS T
+                            FROM tecnologias T
                             WHERE EXISTS (SELECT * FROM skills S WHERE S.IDUSUARIO = :usuario AND T.IDTECNOLOGIA= S.IDTECNOLOGIA)");
         }
         try{
@@ -699,13 +743,13 @@
             //Ejecutando la sentencia
             $sentencia->execute();
             //Obteniendo los datos
-            $respuesta = '<table><tr>
+            $respuesta = '<table id="datosSkills" class="row-border compact stripe hover"><thead><tr>
                             <th>Tipo</th>
                             <th>Idioma</th>
                             <th>Tecnología</th>
                             <th>Nivel</th>
                             <th></th>
-                         </tr>';
+                         </tr></thead><tbody>';
             //Validando la cantidad de registros devueltos
 			$cuenta = $sentencia->rowCount();
             if ($cuenta > 0){
@@ -723,7 +767,7 @@
                                                 </tr>
                                             ';
 			    } //end while 
-                $respuesta = $respuesta.'</table>';
+                $respuesta = $respuesta.'</tbody></table>';
                 return $respuesta;
             } //End if ($cuenta > 0)
             else {
@@ -884,43 +928,12 @@
             } 
     }
 
-    //Función para generar la tabla con el listado de usuarios sin rol asignado
-	function queryUserRole($dbh, $idRol){
-		try{
-			//Preparando la sentencia
-			$sentencia = $dbh->prepare("SELECT idusuario, NVL(nombre, 'No especificado') nombre, NVL(apellidos, 'No especificado') apellidos, NVL(email, '') email, NVL(fecharegistro, '') fecharegistro, NVL(idrol, '') idrol
-                                        FROM usuarios
-                                        WHERE idrol = 4");
-            //Ejecutando la sentencia
-            $sentencia->execute();
-            //Obteniendo los datos
-			while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)) {
-			?>
-                <tr>
-				<td><?php echo $vtabla['nombre']?></td>
-				<td><?php echo $vtabla['apellidos']?></td>
-				<td><?php echo $vtabla['email']?></td>
-                <td><?php echo $vtabla['fecharegistro']?></td>
-                <td>
-                    <select name="idrol" id= "idrol">
-                        <?php 
-                            roleList($dbh, $vtabla['idrol'], $idRol);
-                            //echo $vtabla['idrol'];
-                        ?>
-                    </select>
-                </td>
-                <td style="display:none;"><?php echo $vtabla['idusuario']?></td>
-                <td><button class="guardaraddRoleBtn btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-briefcase"></i> Guardar </span></button></td>
-				</tr>
-			<?php
-			}
-        }catch (PDOException $e){
-            echo('Error al generar lista de asignación de roles. '.$e);
-        }	
-	}
-
     //Función para generar el listado de roles
     function roleList($dbh, $opcion, $idRol){
+
+        //Variable de retorno
+        $result='';
+
         //Armando el Query
         if ($idRol == 2){ //Si es profesor
             $sqlQuery = "SELECT idrol, nombre FROM roles WHERE idrol IN (1, 4)";
@@ -936,19 +949,17 @@
             //Obteniendo los datos
             while ($lista = $sentencia->fetch(PDO::FETCH_ASSOC)) {
                 if ($opcion == $lista['idrol']){
-                    ?>
-                        <option value="<?php echo $lista['idrol']?>" selected><?php echo $lista['nombre']?></option>
-                    <?php        
+                    $result = $result.'<option value="'.$lista['idrol'].'" selected>'.$lista['nombre'].'</option>';
                 }else{
-                    ?>
-                        <option value="<?php echo $lista['idrol']?>"><?php echo $lista['nombre']?></option>
-                    <?php
+                    $result = $result.'<option value="'.$lista['idrol'].'">'.$lista['nombre'].'</option>';
                 }
             }
+            return $result;
         }catch (PDOException $e){
             ErrorLog($dbh, $idsesion, 'Error al generar el listado de roles'.$e, 'OSE_006');
         }
     }
+
 
     //Función para actualizar el rol del usuario
     function updateRole($dbh, $idusr, $idrol, $idsesion){
@@ -993,19 +1004,19 @@
 		try{
 			//Preparando la sentencia
 			$sentencia = $dbh->prepare("SELECT NVL(U.idusuario, '') idusuario
-                                             , NVL(U.nombre, ' No especificado') nombre
-                                             , NVL(U.apellidos, 'No especificado') apellidos
-                                             , NVL(U.fechanacimiento, 'No especificado') fechanacimiento
-                                             , NVL(U.telefono, 'No especificado') telefono
-                                             , NVL(U.telcontacto, 'No especificado') telcontacto
-                                             , NVL(U.email, 'No especificado') email
+                                             , NVL(U.nombre, ' N/E') nombre
+                                             , NVL(U.apellidos, 'N/E') apellidos
+                                             , NVL(U.fechanacimiento, 'N/E') fechanacimiento
+                                             , NVL(U.telefono, 'N/E') telefono
+                                             , NVL(U.telcontacto, 'N/E') telcontacto
+                                             , NVL(U.email, 'N/E') email
                                              , NVL(U.idrol, '') idrol
-                                             , NVL(R.nombre, 'No especificado') rol
-                                             , NVL(U.semestre, 'No especificado') semestre
-                                             , NVL(U.numeroempleado, 'No especificado') numeroempleado
-                                             , NVL(U.numeromatricula, 'No especificado') numeromatricula
+                                             , NVL(R.nombre, 'N/E') rol
+                                             , NVL(U.semestre, 'N/E') semestre
+                                             , NVL(U.numeroempleado, 'N/E') numeroempleado
+                                             , NVL(U.numeromatricula, 'N/E') numeromatricula
                                              , NVL(U.fecharegistro, '') fecharegistro
-                                             , NVL(U.fechafin, '-') fechafin
+                                             , NVL(U.fechafin, 'N/E') fechafin
                                              , NVL(U.bloqueado, 'No') bloqueado
                                         FROM usuarios U
                                         INNER JOIN roles R ON U.idrol = R.idrol
@@ -1039,12 +1050,17 @@
 
     //Función para guardar el registro de una vacante en la base de datos enterCongress.inc.php
     function RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol){
+        //Variable de retorno
+        $result;
+
         //Definiendo el script de INSERT
         $SQL_insert = "INSERT INTO vacantes (titulo, detalles, telefono, email, fechapublicacion, fechafin, idusuario)
                         VALUES (:title, :details, :phone, :email, :pdate, :edate, :iduser)";
+
         try{
             //Preparando la sentencia SQL
             $sentencia = $dbh->prepare($SQL_insert);
+            
             //Definiendo los parámetros
             $sentencia->bindParam(':title', $title);
             $sentencia->bindParam(':details', $details);
@@ -1056,17 +1072,66 @@
             
             //Ejecutando la sentencia
             $sentencia->execute();
-            header("location: ../enterVacancy.php?error=none");
+            
+            $result = true;
+            return $result;
 
         } catch (PDOException $e){
-                //$sentencia->rollback();
-                //throw $e;
-                ErrorLog($dbh, $idsesion, 'Error al registrar la vancante '.$e, 'ISE_008');
-                header("location: ../enterVacancy.php?error=statementerror");
-                /*debug code*/
-                //$vencode = urlencode($e->getMessage());
-                //$valorLocation = 'location: ../signup.php?error=stmtfailedinc&msg1='.$vencode;
-                //header($valorLocation);
+            ErrorLog($dbh, $idsesion, 'Error al registrar la vancante '.$e, 'ISE_008');
+            return $e;
+        } 
+    }
+
+    //Función para validar campos vacios en la forma de edición de vacantes
+    function emptyVacancy($dbh, $title, $details, $phone, $email){
+        //Variable de retorno
+        $result;
+
+        if(empty($title) || empty($details) || empty($phone)|| empty($email)){
+            $result = true;
+        } else {
+            $result = false;
+        }
+        return $result;
+    }
+
+    //Función para actualizar vacantes
+    function updateVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $idvacante, $idsesion, $idrol){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("UPDATE vacantes 
+                                        SET titulo = :title
+                                          , detalles = :details
+                                          , telefono = :phone
+                                          , email = :email
+                                          , fechapublicacion = :pdate
+                                          , fechafin = :edate
+                                        WHERE idvacante = :idvacante");
+            
+            //Definiendo los parámetros
+            $sentencia->bindParam(':title', $title);
+            $sentencia->bindParam(':details', $details);
+            $sentencia->bindParam(':phone', $phone);
+            $sentencia->bindParam(':email', $email);
+            $sentencia->bindParam(':pdate', $pdate);
+            $sentencia->bindParam(':edate', $edate);
+            $sentencia->bindParam(':idvacante', $idvacante);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la bitácora
+            movimientos($dbh, $idsesion, 'UPDATE VACANTES - Id vacante: '.$idvacante);
+
+            $result = 'done';
+            return $result;
+
+        } catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al actualizar la vancante '.$e, 'OSE_009');
+            return $e;
         } 
     }
 
@@ -1232,7 +1297,7 @@
     }
 
     //Función para asociar alumnos a congresos
-    function addPonente($dbh, $idusr, $idcng, $commts, $idSesionUsuario){
+    function addPonente($dbh, $idusr, $idcng, $commts, $idSesionUsuario, $idsesion){
         //Variable para almacenar el resultado
         $result;
 
@@ -1249,12 +1314,17 @@
 
         //Ejecutando la sentencia
         $sentencia->execute();
+        
+        //Registrando el movimiento en la BD    
+        movimientos($dbh, $idsesion, 'INSERT PONENTES idcongreso: '.$idcng);
+        
         $result = 'true';
         return $result;
 
         } catch (PDOException $e){
             $result = false;
             return $result;
+            ErrorLog($dbh, $idsesion, 'Error al tratar de asociar alumno al congreso '.$idcng.': '.$e, 'OSE_010');
         } 
     }
 
@@ -1294,6 +1364,9 @@
                 
                 //Ejecutando la sentencia
                 $sentencia->execute();
+
+                //Registrando el movimiento en la BD            
+                movimientos($dbh, $idsesion, 'QUERY A LA BASE DE DATOS');
     
                 //Valiando la cantidad de registros devueltos
                 $cuenta = $sentencia->rowCount();
@@ -1346,3 +1419,298 @@
             return $result;
         }
     }
+
+    //Función para generar el listado de proyectos activos
+    function listaProyectos($dbh){
+        //Variable de retorno
+        $result;
+        //Query
+        $sql = "SELECT idproyecto, titulo 
+                    FROM proyectos";
+        try{
+                //Preparando la sentencia SQL
+                $sentencia = $dbh->prepare($sql);
+                
+                //Ejecutando la sentencia
+                $sentencia->execute();
+    
+                //Valiando la cantidad de registros devueltos
+                $cuenta = $sentencia->rowCount();
+    
+                if($cuenta >= 1){ //Si hay por lo menos una coincidencia
+                    while ($vtabla = $sentencia->fetch(PDO::FETCH_ASSOC)){
+                        $result = $result.' <option value = "'.$vtabla['idproyecto'].'">'.$vtabla['titulo'].'</option>';
+                    }
+                    echo $result;
+                } else {
+                    echo ' <option value = "0">No hay datos</option>';
+                }
+            }catch (PDOException $e){
+                echo('Error al realizar la búsqueda, sesionID '.$idsesion.': '.$e);
+            }
+    }
+
+    //Función para eliminar vacantes
+    function DeleteVacancy($dbh, $idvacante, $idsesion){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("DELETE FROM vacantes WHERE idvacante = :pidvacante");
+            
+            //Definiendo los parámetros
+            $sentencia->bindParam(':pidvacante', $idvacante);
+
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'DELETE VACANTE IDVACANTE: '.$idvacante);
+            
+            //Resultado 
+            $result = 'done';
+
+            return $result;
+ 
+        }catch (PDOException $e){
+            echo('error');
+            ErrorLog($dbh, $idsesion, 'Error al eliminar la vacante '.$idvacante.': '.$e, 'ISE_012');
+        }
+    }
+
+    //Función para eliminar vacantes
+    function DeleteCongress($dbh, $idcongreso, $idsesion){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("DELETE FROM congresos WHERE idcongreso = :pidcongreso");
+            
+            //Definiendo los parámetros
+            $sentencia->bindParam(':pidcongreso', $idcongreso);
+
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'DELETE CONGRESOS IDCONGRESO: '.$idcongreso);
+            
+            //Resultado 
+            $result = 'done';
+
+            return $result;
+ 
+        }catch (PDOException $e){
+            echo('error');
+            ErrorLog($dbh, $idsesion, 'Error al eliminar el conrgreso '.$idvacante.': '.$e, 'ISE_013');
+        }
+    }
+
+    //Función para contar el total de registros de una consulta
+    function cuentaRegistros($dbh, $idsesion, $sql){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare($sql);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'QUERY A LA BASE DE DATOS ');
+
+            //Valiando la cantidad de registros devueltos
+            $cuenta = $sentencia->rowCount();
+
+            if($cuenta >= 1){ //Si hay por lo menos una coincidencia
+                $result = $cuenta;
+            } else {
+                $result = false;
+            }
+            
+            //Devolviendo el resultado
+            return $result;
+
+        }catch (PDOException $e){
+            echo('Error al realizar la búsqueda, sesionID '.$idsesion.': '.$e);
+        }
+    }
+
+    //Función para depurar registros
+    function depuraRegistros($dbh, $idsesion, $query, $tipo){
+        //Variable de retorno
+        $result;
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare($query);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'DEPURA '.$tipo);
+            
+            //Resultado 
+            $result = 'done';
+
+            return $result;
+ 
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al depurar registros '.$tipo.': '.$e, 'ISE_014');
+            echo('error'.$e);
+        }
+    }
+
+    //Función para editar la información del congreso
+    function EditCongress($dbh, $cname, $details, $sede, $finicio, $ffin, $reco, $pasoc, $idcong, $iduser, $idsesion, $idrol){
+        $result;
+
+        //Definiendo el script de INSERT. Si el valor del proyecto está vacio se asocia al proyecto de carga inicial
+        if (empty($pasoc)){
+            $pasoc=1;
+        }
+        
+        if($idrol == 2) {//Rol de profesor
+            $SQL = "UPDATE congresos SET nombre = :cname, detalles = :details, sede = :sede, fechainicio = :finicio, fechafin = :ffin, titulo = :reco, idproyecto = :pasoc WHERE idcongreso = :idcong";
+
+            try{
+                //Preparando la sentencia SQL
+                $sentencia = $dbh->prepare($SQL);
+
+                //Definiendo los parámetros
+                $sentencia->bindParam(':cname', $cname);
+                $sentencia->bindParam(':details', $details);
+                $sentencia->bindParam(':sede', $sede);
+                $sentencia->bindParam(':finicio', $finicio);
+                $sentencia->bindParam(':ffin', $ffin);
+                $sentencia->bindParam(':reco', $reco);
+                $sentencia->bindParam(':pasoc', $pasoc);
+                $sentencia->bindParam(':idcong', $idcong);
+                
+                //Ejecutando la sentencia
+                $sentencia->execute();
+
+                //Registrando el movimiento en la BD            
+                movimientos($dbh, $idsesion, 'UPDATE '.$iduser);
+
+                $result = 'done';
+                return $result;
+
+            } catch (PDOException $e){
+                    ErrorLog($dbh, $idsesion, 'Error al actualizar el congreso '.$e, 'ISE_015');   
+                    return $e;
+            } 
+
+        }else{
+            $result = 'invalidRole';
+            return $result;
+        }
+    }
+
+    //Función para obtener el nombre de la imagen de perfil del usuario
+    function getProfileImg($dbh, $idusr, $idsesion){
+        //Variable de retorno
+        $result;
+        //Query
+        $sql = "SELECT archivo FROM profileimg WHERE idusuario = :idusr";
+
+        try{
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare($sql);
+
+            //Definiendo los parámetros
+            $sentencia->bindParam(':idusr', $idusr);
+            
+            //Ejecutando la sentencia
+            $sentencia->execute();
+
+            //Registrando el movimiento en la BD            
+            movimientos($dbh, $idsesion, 'QUERY IMG PROFILE');
+
+            //Valiando la cantidad de registros devueltos
+            $cuenta = $sentencia->rowCount();
+
+            if($cuenta >= 1){ //Si hay por lo menos una coincidencia
+                
+                $resp = $sentencia->fetch(PDO::FETCH_ASSOC);
+                //Obteniendo el valor de la base de datos
+                $result = $resp["archivo"];
+
+            } else {
+                $result = false;
+            }
+            
+            //Devolviendo el resultado
+            return $result;
+
+        }catch (PDOException $e){
+            ErrorLog($dbh, $idsesion, 'Error al realizar la búsqueda de la imagen de perfil'.$e, 'ISE_016');   
+        }   
+    }
+
+        //Función para actualizar el nombre de la imagen de perfil del usuario
+        function updateProfileImg($dbh, $idusr, $idsesion, $extension){
+            //Variable de retorno
+            $result;
+
+            $archivo = $idusr.'.'.$extension;
+            //Validando si existe imagen previa y definiendo el query en base a ello
+            if(imgExist($dbh, $idusr) != false){
+                $sql = "UPDATE profileimg SET archivo = :archivo  WHERE idusuario = :idusr";   
+            }else{
+                $sql = "INSERT INTO profileimg (archivo, idusuario) VALUES (:archivo, :idusr)"; 
+            }
+            
+            
+    
+            try{
+                //Preparando la sentencia SQL
+                $sentencia = $dbh->prepare($sql);
+    
+                //Definiendo los parámetros
+                $sentencia->bindParam(':archivo', $archivo);
+                $sentencia->bindParam(':idusr', $idusr);
+                
+                //Ejecutando la sentencia
+                $sentencia->execute();
+    
+                //Registrando el movimiento en la BD            
+                movimientos($dbh, $idsesion, 'UPDATE IMG PROFILE');
+    
+                $result = 'done';
+                //Devolviendo el resultado
+                return $result;
+    
+            }catch (PDOException $e){
+                ErrorLog($dbh, $idsesion, 'Error al actualizar de la imagen de perfil'.$e, 'ISE_017');   
+            }   
+        }
+
+        //Función para validar si existe alguna imagen de usuario previa
+        function imgExist($dbh, $idusr){
+            //Variable para almacenar el resultado
+            $result;
+            //Preparando la sentencia SQL
+            $sentencia = $dbh->prepare("SELECT * FROM profileimg WHERE idusuario = :idusr");
+            //Definiendo los parámetros
+            $sentencia->bindParam(':idusr', $idusr);
+            //Ejecutando la sentencia
+            $sentencia->execute();
+            //Obteniendo los datos
+            //$usuarios = $sentencia->fetch(PDO::FETCH_ASSOC);
+            
+            //Valiando si trae datos la búsqueda
+            $cuenta = $sentencia->rowCount();
+                
+            if($cuenta >= 1){
+                return $cuenta;
+            } else {
+                $result = false;
+                return $result;
+            }
+        }

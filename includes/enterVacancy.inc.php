@@ -3,7 +3,7 @@
 require_once 'dbh.inc.php';
 require_once 'functions.inc.php';
 
-if(isset($_POST["submit"])){
+if(($_SERVER["REQUEST_METHOD"] == "POST")){
     //Obtiene los datos del formulario
     $title = $_POST["title"];
     $details = $_POST["details"];
@@ -14,23 +14,22 @@ if(isset($_POST["submit"])){
     $iduser = $_POST["iduser"];
     $idsesion = $_POST["idsesion"];
     $idrol = $_POST["idrol"];
-    
-
-    //Validando campos en blanco
-    if(emptyInputVacancy($title, $details, $pdate, $edate, $phone, $email) !== false){
-        header("location: ../enterVacancy.php?error=emptyinput");
-        exit();
-    }
 
     //Validando si la vacante ya existe
     if(vacancyExist($dbh, $title, $details) !== false){
-        header("location: ../enterVacancy.php?error=vacancyDuplicated");
+        echo 'alreadyExist';
         exit();
     }
 	
 	//Llamando la función para guardar la vacante
-    RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol);
-		
+    $result = RecordVacancy($dbh, $title, $details, $pdate, $edate, $phone, $email, $iduser, $idsesion, $idrol);
+	if($result === true){
+        echo "done";
+		exit();
+    }else{
+        echo "Error al tratar de guardar la vacante. Intentelo nuevamente o reportelo con el administrador ".$result;
+        exit();
+    }	
 
 } else{
     //Regresa a la página inicial

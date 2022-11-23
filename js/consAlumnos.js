@@ -1,4 +1,7 @@
 $(document).ready(function(){
+    //Cambiando el valor del encabezado
+    $.fn.changeHeaderTitle('Consulta de alumnos');
+
     //Botón Buscar
     $('#btnBuscar').click(function(){ //Al presionar el botón Buscar
         
@@ -26,16 +29,40 @@ $(document).ready(function(){
             //console.log(res);
             if (res == 'invalidRole'){
                 $("#tablaResultados").collapse("hide"); //Oculta la tabla de resultados
-                $('#mensajes').html('EL rol actual no tiene privilegios para realizar esta acción. Pongase en contacto con el administrador')
-                $("#mensajes").collapse("show"); //muestra la tabla de mensajes
+                $.confirm({
+                    title: '<i class="bi bi-exclamation-triangle" style= "color: orange;"></i> Advertencia',
+                    content: 'EL rol actual no tiene privilegios para realizar esta acción. Pongase en contacto con el administrador',
+                    type: 'orange',
+                    typeAnimated: true,
+                    buttons: {
+                            Aceptar: function () {
+                            }
+                    }
+                });
+                //$('#mensajes').html('EL rol actual no tiene privilegios para realizar esta acción. Pongase en contacto con el administrador')
+                //$("#mensajes").collapse("show"); //muestra la tabla de mensajes
             } else if (res == 'noData'){
                 $("#tablaResultados").collapse("hide"); //Oculta la tabla de resultados
-                $('#mensajes').html('No se encontraron resultados con los criterios de búsqueda.')
-                $("#mensajes").collapse("show"); //muestra la tabla de mensajes
+                $.confirm({
+                    title: '<i class="bi bi-exclamation-triangle" style= "color: orange;"></i> Advertencia',
+                    content: 'No se encontraron resultados con los criterios de búsqueda',
+                    type: 'orange',
+                    typeAnimated: true,
+                    buttons: {
+                            Aceptar: function () {
+                            }
+                    }
+                });
+                //$('#mensajes').html('No se encontraron resultados con los criterios de búsqueda.')
+                //$("#mensajes").collapse("show"); //muestra la tabla de mensajes
             } else {
-                $("#mensajes").collapse("hide"); //Oculta la tabla de mensajes
                 $('#tablaResultados').html(res)
                 $("#tablaResultados").collapse("show"); //muestra la tabla de resultados
+
+                $('#usersTable').DataTable( {
+                    scrollCollapse: true,
+                    responsive: true
+                  });
             }
 
         }) //END AJAX DONE includes/queryVacancy.inc.php'
