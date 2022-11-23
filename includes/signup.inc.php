@@ -42,10 +42,11 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     }
     
     //Validando si el usuario ID ya existe
-    if(uidExist($dbh, $email) !== false){
+        $valor = uidExist($dbh, $email);
+    if($valor !== false){
         //$errorDetails = getURLData($name, $sname, $email);
         //header("location: ../signup.php?error=usrnametaken&".$errorDetails);
-        echo "El correo electrónico ingresado ya está registrado. Ingrese uno distinto";
+        echo "El correo electrónico ingresado ya está registrado. Ingrese uno distinto". $valor;
         exit();
     }
     

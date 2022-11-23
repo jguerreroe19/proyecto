@@ -18,7 +18,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         //Llamando a la función para generar la consulta
         $respuesta = queryUsers($dbh, $dato, $idsesion);
         if ($respuesta != false){
-            $result = '<table id="usersTable" class="table-responsive"><thead><tr>
+            $result = '<table id="usersTable" class="row-border compact stripe hover"><thead><tr>
                             <th>Nombre</th>
                             <th>Apellidos</th>
                             <th>Fecha de Nacimiento</th>

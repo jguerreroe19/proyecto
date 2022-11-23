@@ -43,9 +43,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     $respuesta = consultaBD($dbh, $idsesion, $queryBase);
 
     if ($respuesta != false){
-        $result = '<h2>Listado de vacantes</h2></br>
-                    <table>
-                    <tr>
+        $result = '<table id="vacancyTable" class="row-border compact stripe hover"><thead><tr>
                     <th>ID</th>    
                     <th style="display:none;">Creadopor</th>
                     <th>Titulo</th>
@@ -56,18 +54,22 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         //Definiendo opciones a mostrar en base al rol
         switch ($idrol) {
             case 1: //Alumno
-                $result = $result.'<th></th></tr>';
+                $result = $result.'<th style="display:none;"></th>
+                                   <th style="display:none;"></th>
+                                   <th></th>
+                                   </tr></thead><tbody>';
                 break;
             case 2: //Profesor
                 $result = $result.'<th>Teléfono de contacto</th>
                                           <th>Email de contacto</th>
                                           <th></th>
-                                          </tr>';
+                                          <th></th>
+                                          </tr></thead><tbody>';
                 break;
             case 3: //Administrador
                 $result = $result.'<th>Teléfono de contacto</th>
                                           <th>Email de contacto</th>
-                                          </tr>';    
+                                          </tr></thead><tbody>';    
                 break;
             default: //Otro
                 ErrorLog($dbh, $idsesion, 'El rol no permite consultar vacantes '.$e, 'ISE_009');
@@ -92,7 +94,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                     }else{
                         $result = $result.'<td style="display:none;">'.$vtabla['telefono'].'</td>
                                            <td style="display:none;">'.$vtabla['email'].'</td>
-                                           <td><button class="btn btn-secondary btnMostrarDatos" style="vertical-align:middle"><span><i class="bi bi-eye"></i> Mostrar datos </span></button></td></tr>';
+                                           <td><button class="btn btn-dark btnMostrarDatos" style="vertical-align:middle"><span><i class="bi bi-eye"></i> Datos </span></button></td></tr>';
                     }
                 break;
                 case 2: //Profesor
@@ -100,6 +102,8 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                                              <td>'.$vtabla['email'].'</td>
                                              <td>
                                                 <button class="btn btn-secondary btnEditar" style="vertical-align:middle"><span><i class="bi bi-pencil-square"></i> Editar </span></button>
+                                            </td>
+                                            <td>
                                                 <button class="btn btn-secondary btnEliminar" style="vertical-align:middle"><span><i class="bi bi-trash"></i> Eliminar </span></button>
                                              </td></tr>';
                 break;

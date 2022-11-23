@@ -73,7 +73,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     $respuesta = consultaBD($dbh, $idsesion, $queryBase);
 
     if ($respuesta != false){
-        $result = '<table id="datosCongreso" class="table-responsive"><thead><tr>
+        $result = '<table id="datosCongreso" class="row-border compact stripe hover"><thead><tr>
                         <th>ID</th>    
                         <th>Nombre</th>
                         <th>Detalles</th>
@@ -82,15 +82,24 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                         <th>Fecha de termino</th>
                         <th>Documento a otorgar</th>
                         <th>Proyecto asociado</th>
-                        <th>Detalles del proyecto</th>
-                        </tr></thead><tbody>';
+                        <th>Detalles del proyecto</th>';
         //Definiendo opciones a mostrar en base al rol
         switch ($idrol) {
             case 1: //Alumno
-                $result = $result.'<th>Detalles de Asignación</th></tr></thead>';
+                $result = $result.'<th>Detalles de Asignación</th>
+                                   <th style="display:none;"></th>
+                                   <th style="display:none;"></th>
+                                   <th style="display:none;"></th>
+                                   </tr></thead><tbody>';
                 break;
             case 2: //Profesor
-                $result = $result.'<th></th></tr></thead>';
+                $result = $result.'<th style="display:none;"></th>
+                                   <th style="display:none;"></th>
+                                   <th style="display:none;"></th>
+                                   <th></th>
+                                   <th></th>
+                                   <th></th>
+                                   </tr></thead><tbody>';
                 break;
             default: //Otro
                 ErrorLog($dbh, $idsesion, 'El rol no permite consultar congresos '.$e, 'ISE_011');
@@ -104,18 +113,20 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                                <td>'.$vtabla['fechainicio'].'</td>
                                <td>'.$vtabla['fechafin'].'</td>
                                <td>'.$vtabla['titulo'].'</td>';
-            //Varia si tiene o no proyecto asignado
+            
+            //Valida si tiene o no proyecto asociado
             if($vtabla['proyectoasociado'] =='Sin proyecto asociado') {
-                $result = $result.'<td>'.$vtabla['proyectoasociado'].'</td><td> N/A </td>';
+                $result = $result.'<td>'.$vtabla['proyectoasociado'].'</td>
+                                   <td> N/A </td>';
             }else{
                 $result = $result.'<td>'.$vtabla['proyectoasociado'].'</td>
-                        <td><button name="detalles" class="datos btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-eye"></i> Detalles </span></button></td>';
+                                   <td><button name="detalles" class="datos btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-eye"></i> Detalles </span></button></td>';
             }
             
             //Definiendo opciones a mostrar en base al rol
             switch ($idrol) {
                 case 1: //Alumno
-                    if (validateApplyVacancy($dbh, $vtabla['id'], $idusuario) == false){
+                    if (alumnoCongreso($dbh, $idusuario, $vtabla['id']) !== false){
                         $result = $result.'<td style="display:none;">'.$vtabla['descripcion'].'</td>
                                            <td style="display:none;">'.$vtabla['tipo'].'</td>
                                            <td style="display:none;">'.$vtabla['idproyecto'].'</td>
@@ -133,8 +144,12 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                                        <td style="display:none;">'.$vtabla['tipo'].'</td>
                                        <td style="display:none;">'.$vtabla['idproyecto'].'</td>
                                        <td>
-                                       <button class="asociar btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-person-plus"></i> Asociar Alumno </span></button>
+                                       <button class="asociar btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-person-plus"></i> Asociar </span></button>
+                                       </td>
+                                       <td>
                                        <button class="editar btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-pencil-square"></i> Editar </span></button>
+                                       </td>
+                                       <td>
                                        <button class="eliminar btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-trash"></i> Eliminar </span></button>
                                        </td></tr>';
                 break;

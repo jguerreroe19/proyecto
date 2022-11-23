@@ -14,37 +14,33 @@
     $idRol = $_SESSION["idrol"];
 ?>
     
-    <section class="addRole-form">
-        <h2>Asignar Roles</h2>
+    <section class="addRole-form debajodelNav">
         <div class="container">
             <form name="qLog" id = "formAddRole" action="#" method="post" class="row g-3">
-                <label for="Tipo">Seleccione el rol y presione el botón guardar o ingrese el valor a buscar para filtrar los datos</label>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                        <i class="bi bi-info-circle"></i> Indicaciones
+                    </button>
+                    <div class="collapse" id="collapseExample">
+                        <div class="card card-body">
+                        Ingrese el usuario a buscar (email), nombre o apellido. Seleccione el rol y presione el botón guardar.
+                        </div>
+                    </div>
+                </div>
                 <div class="col-md-6"> 
 				    <label for="buscar" class="form-label labelPopUp">Buscar: </label>
-				    <input type="text" name="addRoleFilter" id="addRoleFilter" class="form-control" placeholder="Filtrar datos">
+				    <input type="text" name="addRoleBuscar" id="addRoleBuscar" class="form-control" placeholder="Filtrar datos">
 			    </div>
                 <div class="col-12">
 				    <input type="hidden" name="idrol" id="idrol" value="<?php echo $idRol;?>">	
 				    <input type="hidden" name="idsesion" id="idsesion" value="<?php echo $_SESSION["sid"];?>">
+                    <input type="button" value="Buscar" id="btnBuscar" class="buttonEnviar">
                 </div> 	
             </form>
         </div> 
         </br></br>
-        <div id="Tabla">
-        <table id="roleTable" class="table-responsive"><thead><tr>
-                                <th>Nombre</th>
-                                <th>Apellidos</th>
-                                <th>Email</th>
-                                <th>Fecha de registro</th>
-                                <th>Rol</th>
-                                <th></th>
-                                </tr></thead><tbody>
-        <?php
-                //Llamando la función para armar el cuerpo de la tabla
-                queryUserRole($dbh, $idRol);
-            ?>	
-        </tbody></table>
-        </div> 
+        <!--Muestra la respuesta que se recibe de Ajax-->
+	    <div id="tablaResultados" class="container-xl collapse hide" style="padding-top: 30px;"></div>
     </section>
 
 <?php

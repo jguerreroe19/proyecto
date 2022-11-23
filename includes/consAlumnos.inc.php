@@ -22,7 +22,25 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     if ($idrol == 2){
 
         //Preparando la sentencia
-        $sqlQuery = "SELECT SK.idusuario
+        $sqlQuery = "SELECT 
+                            SK.idusuario
+                            , NVL(US.apellidos, 'N/E') apellidos
+                            , NVL(US.nombre, 'N/E') nombre
+                            , SK.tipo 
+                            , NVL(ID.nombre, TC.nombre) habilidad 
+                            , NVL(NV.nivel, 'N/E') nivel
+                            , NVL(US.telefono, 'N/E')telefono
+                            , NVL(US.telcontacto, 'N/E')telcontacto
+                            , NVL(US.email, '')email
+                            , NVL(US.semestre, 'No definido')semestre
+                        FROM skills SK
+                        LEFT JOIN usuarios US ON SK.idusuario  = US.idusuario
+                        LEFT JOIN idiomas ID ON SK.ididioma = ID.ididioma
+                        LEFT JOIN tecnologias TC ON SK.idtecnologia = TC.idtecnologia
+                        LEFT JOIN niveles NV ON SK.idnivel = NV.idnivel
+                        WHERE (ID.nombre IS NOT NULL OR TC.nombre IS NOT NULL)
+                        AND US.idrol = 1";
+        /*"SELECT SK.idusuario
                     , NVL(US.apellidos, '') apellidos
                     , NVL(US.nombre, '') nombre
                     , NVL(SK.tipo, '') tipo
@@ -38,7 +56,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                     LEFT JOIN idiomas ID ON SK.ididioma = ID.ididioma
                     LEFT JOIN tecnologias TC ON SK.idtecnologia = TC.idtecnologia
                     LEFT JOIN niveles NV ON SK.idnivel = NV.idnivel
-                    WHERE US.idrol = 1";
+                    WHERE US.idrol = 1";*/
         
         if(!empty($name)){
             $sqlQuery = $sqlQuery." AND UPPER(US.nombre) LIKE UPPER(NVL('%".$name."%',US.nombre))";
@@ -60,18 +78,17 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         }
 
 
-        $sqlQuery = $sqlQuery." ORDER BY US.apellidos, SK.tipo DESC, NV.idnivel DESC";
+        $sqlQuery = $sqlQuery." ORDER BY US.apellidos, SK.tipo DESC, NVL(ID.nombre, TC.nombre)";
 
     
         //Llamando a la función para generar la consulta
         $respuesta = consultaBD($dbh, $idsesion, $sqlQuery);
         if ($respuesta != false){
-            $result = '<table id="usersTable" class="table-responsive"><thead><tr>
+            $result = '<table id="usersTable" class="row-border compact stripe hover"><thead><tr>
                             <th>Apellidos</th>
                             <th>Nombre</th>
                             <th>Tipo de conocimiento</th>
-                            <th>Idioma</th>
-                            <th>Tecnología</th>
+                            <th>Conocimiento</th>
                             <th>Nivel</th>
                             <th>Teléfono</th>
                             <th>Teléfono de contacto</th>
@@ -84,8 +101,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
                                    <td>'.$vtabla['apellidos'].'</td>
                                    <td>'.$vtabla['nombre'].'</td>
                                    <td>'.$vtabla['tipo'].'</td>
-                                   <td>'.$vtabla['idioma'].'</td>
-                                   <td>'.$vtabla['tecnologia'].'</td>
+                                   <td>'.$vtabla['habilidad'].'</td>
                                    <td>'.$vtabla['nivel'].'</td>
                                    <td>'.$vtabla['telefono'].'</td>
                                    <td>'.$vtabla['telcontacto'].'</td>

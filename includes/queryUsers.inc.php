@@ -18,8 +18,8 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
             , NVL(US.apellidos, '') apellidos
             , NVL(US.email, '') email
             , RL.nombre rol
-            , NVL(US.bloqueado, 'Y') bloqueado
-            , NVL(US.fechafin, 'N/A')fechafin
+            , NVL(US.bloqueado, 'N') bloqueado
+            , NVL(US.fechafin, 'N/E')fechafin
                     FROM usuarios US
                     LEFT OUTER JOIN roles RL ON RL.idrol = US.idrol
                     WHERE UPPER(email) LIKE UPPER('%".$usuario."%')";
@@ -32,27 +32,31 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         //Llamando a la función para generar la consulta
         $respuesta = consultaBD($dbh, $idsesion, $sql);
         if ($respuesta != false){
-            $result = '<table id="usersTable" class="table-responsive"><thead><tr>
-                            <th>ID usuario</th>    
-                            <th>Nombre</th>
-                            <th>Apellidos</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Fecha de Expiración</th>
-                            <th>Bloqueado</th>
-                            <th></th>
-                            </tr></thead><tbody>';
+            $result = '<table id="usersTable" class="row-border compact stripe hover">
+                            <thead>
+                                <tr>
+                                    <th>ID usuario</th>    
+                                    <th>Nombre</th>
+                                    <th>Apellidos</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Fecha de Expiración</th>
+                                    <th>Bloqueado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>';
         
             while ($vtabla = $respuesta->fetch(PDO::FETCH_ASSOC)) {
                 $result = $result.'<tr>
-                                   <td>'.$vtabla['idusuario'].'</td>
-                                   <td>'.$vtabla['nombre'].'</td>
-                                   <td>'.$vtabla['apellidos'].'</td>
-                                   <td>'.$vtabla['email'].'</td>
-                                   <td>'.$vtabla['rol'].'</td>
-                                   <td>'.$vtabla['fechafin'].'</td>
-                                   <td>'.$vtabla['bloqueado'].'</td>
-                                   <td><button class="pwdResetBtn btn btn-secondary" style="vertical-align:middle"><span><i class="bi bi-key"></i> Restablecer</br>Contraseña </span></button></td>
+                                        <td>'.$vtabla['idusuario'].'</td>
+                                        <td>'.$vtabla['nombre'].'</td>
+                                        <td>'.$vtabla['apellidos'].'</td>
+                                        <td>'.$vtabla['email'].'</td>
+                                        <td>'.$vtabla['rol'].'</td>
+                                        <td>'.$vtabla['fechafin'].'</td>
+                                        <td>'.$vtabla['bloqueado'].'</td>
+                                        <td><button class="pwdResetBtn btn btn-secondary"><span><i class="bi bi-key"></i> Restablecer </span></button></td>
                                    </tr>';
             }
             $result = $result.'</tbody></table>';
@@ -76,4 +80,3 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
 }
 
 ?>
-

@@ -15,24 +15,12 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     if ($idrol = 2 || $idrol = 3){
         //Llamando la función para generar la tabla 
         if (unlockUser($dbh, $idsesion, $usr2Unlock)){
-           echo 'Usuario desbloqueado exitosamente';
+           echo 'done';
         } else{
-           echo 'Error al desbloquear al usuario. Intentelo nuevamante' ;
+           echo 'Error';
         }
-
-      /*  if ($respuesta != false){
-            //Enviando el resultado
-            echo 'Usuario activado!'
-            //Devolviendo el valor
-            echo $return;
-            exit();
-        }else{
-            //echo $respuesta;
-            echo 'Error al desbloquear el usuario!';
-            exit();
-        }*/
     }else{
-        echo 'EL rol actual no tiene privilegios para realizar esta acción. Pongase en contacto con el administrador';
+        echo 'invalidRole';
         exit();
     }
 

@@ -32,7 +32,7 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
         //exit();
     }else{
         //header("location: ../profile.php?error=none");
-        echo "<p>Datos actualizados exitosamente!</p>";
+        echo "done";
     }    
 
 }else {

@@ -18,27 +18,21 @@ if(($_SERVER["REQUEST_METHOD"] == "POST")){
     $idrol = $_POST["idrol"];
     
 
-    //Validando campos en blanco
-    if(emptyInputCongress($cname, $details, $sede, $finicio, $ffin, $reco) !== false){
-        //header("location: ../enterVacancy.php?error=emptyinput");
-        echo "<p>Los campos no pueden estar vacios</p>";
-        exit();
-    }
-
-    //Validando si la vacante ya existe
-    if(congressExist($dbh, $cname, $details) !== false){
+    //Validando si el congreso ya existe
+    if(congressExist($dbh, $cname) !== false){
         //header("location: ../enterVacancy.php?error=vacancyDuplicated");
-        echo "<p>Ya existe un congreso registrado con el mismo nombre o detalles</p>";
+        echo "alreadyExist";
         exit();
     }
 	
-	//Llamando la función para guardar la vacante
+	//Llamando la función para guardar el congreso
     $result = RecordCongress($dbh, $cname, $details, $sede, $finicio, $ffin, $reco, $pasoc, $iduser, $idsesion, $idrol);
     if($result === true){
-        echo "<p>Congreso guardado exitosamente!</p>";
+        echo "done";
 		exit();
     }else{
-        echo "<p>Error al tratar de guardar el congreso. Intentelo nuevamente o reportelo con el administrador.</p> ".$result;
+        echo "Error al tratar de guardar el congreso. Intentelo nuevamente o reportelo con el administrador ".$result;
+        exit();
     }
 } else{
     //Regresa a la página inicial
